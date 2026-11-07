@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Settings, CalendarHeart, Sparkles } from 'lucide-react';
+import { Plus, Settings, CalendarHeart } from 'lucide-react';
 import { useEvents } from '@/hooks/useEvents';
 import { EventCard } from '@/components/events/EventCard';
 import { EventFormModal } from '@/components/events/EventFormModal';
@@ -111,22 +111,9 @@ export const HomePage: React.FC = () => {
         )}
 
         {/* Main Title */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-bold text-text tracking-tight">Your Events</h2>
-            <p className="text-xs text-subtle">Organize and monitor expenses per event</p>
-          </div>
-
-          {events.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setIsCreateOpen(true)}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-pine hover:bg-pine/90 text-white font-semibold text-xs transition shadow-sm active:scale-95 min-h-[38px]"
-            >
-              <Plus className="w-4 h-4" />
-              New Event
-            </button>
-          )}
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-text tracking-tight">Your Events</h2>
+          <p className="text-xs text-subtle">Organize and monitor expenses per event</p>
         </div>
 
         {/* Event Cards or Empty State */}
