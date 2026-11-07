@@ -61,48 +61,57 @@ export const HomePage: React.FC = () => {
         {/* In-App PWA Install Banner */}
         <PWAInstallBanner />
 
-        {/* Currency-grouped compact overall summary if multiple events exist */}
+        {/* Currency-grouped overall summary with Pending as primary visual focus */}
         {currencyTotals.length > 0 && (
-          <section className="mb-6 space-y-3" aria-label="Overall Summary">
+          <section className="mb-5 space-y-3" aria-label="Overall Summary">
             {currencyTotals.map(([curr, totals]) => (
               <div
                 key={curr}
-                className="p-4 rounded-2xl bg-surface/70 border border-overlay/80 shadow-xs"
+                className="p-4 sm:p-5 rounded-2xl bg-surface/75 border border-overlay/80 shadow-xs"
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2.5">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted">
                     Overall Summary ({curr})
                   </span>
-                  <span className="text-xs text-subtle">
+                  <span className="text-xs text-subtle font-medium">
                     {totals.count} {totals.count === 1 ? 'event' : 'events'}
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-left">
-                  <div>
-                    <span className="text-[11px] text-subtle block font-medium">Committed</span>
-                    <CurrencyDisplay
-                      amount={totals.committed}
-                      currency={curr}
-                      className="text-sm font-bold block truncate"
-                    />
-                  </div>
-                  <div>
-                    <span className="text-[11px] text-subtle block font-medium">Paid</span>
-                    <CurrencyDisplay
-                      amount={totals.paid}
-                      currency={curr}
-                      highlightStatus="paid"
-                      className="text-sm font-bold block truncate"
-                    />
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[11px] text-subtle block font-medium">Pending</span>
+
+                <div className="flex items-baseline justify-between gap-4">
+                  {/* Hero visual focus: Pending */}
+                  <div className="min-w-0">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-subtle block mb-0.5">
+                      Pending
+                    </span>
                     <CurrencyDisplay
                       amount={totals.pending}
                       currency={curr}
                       highlightStatus={totals.pending > 0 ? 'pending' : 'neutral'}
-                      className="text-sm font-bold block truncate"
+                      className="text-2xl sm:text-3xl font-extrabold block truncate leading-none"
                     />
+                  </div>
+
+                  {/* Secondary metrics: Paid and Committed */}
+                  <div className="flex items-center gap-3 sm:gap-5 shrink-0 text-right">
+                    <div>
+                      <span className="text-[11px] text-subtle block font-medium">Paid</span>
+                      <CurrencyDisplay
+                        amount={totals.paid}
+                        currency={curr}
+                        highlightStatus="paid"
+                        className="text-sm sm:text-base font-bold block"
+                      />
+                    </div>
+                    <div className="h-6 w-px bg-overlay/80" />
+                    <div>
+                      <span className="text-[11px] text-subtle block font-medium">Committed</span>
+                      <CurrencyDisplay
+                        amount={totals.committed}
+                        currency={curr}
+                        className="text-sm sm:text-base font-semibold text-text block"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -111,16 +120,16 @@ export const HomePage: React.FC = () => {
         )}
 
         {/* Main Title */}
-        <div className="mb-4">
+        <div className="mb-3">
           <h2 className="text-xl font-bold text-text tracking-tight">Your Events</h2>
           <p className="text-xs text-subtle">Organize and monitor expenses per event</p>
         </div>
 
         {/* Event Cards or Empty State */}
         {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2].map((i) => (
-              <div key={i} className="h-44 rounded-2xl bg-surface animate-pulse border border-overlay" />
+          <div className="space-y-2.5 sm:space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-20 rounded-2xl bg-surface animate-pulse border border-overlay" />
             ))}
           </div>
         ) : events.length === 0 ? (
@@ -133,7 +142,7 @@ export const HomePage: React.FC = () => {
             className="mt-4 my-auto py-12"
           />
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2.5 sm:space-y-3">
             {events.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
