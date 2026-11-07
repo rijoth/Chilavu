@@ -29,7 +29,9 @@ export const ArchivePage: React.FC = () => {
         title="Archived Events"
         subtitle={
           archivedEvents.length > 0
-            ? `${archivedEvents.length} ${archivedEvents.length === 1 ? 'event' : 'events'} archived`
+            ? debouncedQuery.trim()
+              ? `${filteredEvents.length} of ${archivedEvents.length} ${archivedEvents.length === 1 ? 'event' : 'events'}`
+              : `${archivedEvents.length} ${archivedEvents.length === 1 ? 'event' : 'events'} archived`
             : undefined
         }
         hasBack={true}
@@ -38,15 +40,15 @@ export const ArchivePage: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col px-4 pt-4 sm:px-6">
-        {/* Search Bar when there are archived events */}
+        {/* Search Bar when there are 3 or more archived events */}
         {archivedEvents.length >= 3 && (
           <div className="mb-4">
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
               onClear={handleClearSearch}
-              placeholder="Search archived events"
-              ariaLabel="Search archived events"
+              placeholder="Search archive"
+              ariaLabel="Search archive"
             />
           </div>
         )}

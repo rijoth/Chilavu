@@ -88,4 +88,46 @@ describe('Event Search and Filtering', () => {
     const noMatches = filterEvents(sampleEvents, 'Nonexistent Query XYZ');
     assert.equal(noMatches.length, 0);
   });
+
+  it('matches archived events by archivedAt date text', () => {
+    const archivedEvent = {
+      id: 'arch-1',
+      name: 'College Reunion',
+      eventDate: '2025-05-10',
+      archivedAt: '2026-11-07T10:30:00Z',
+    };
+
+    // Match by event name
+    assert.equal(matchesEventSearch(archivedEvent, 'Reunion'), true);
+
+    // Match by original event date
+    assert.equal(matchesEventSearch(archivedEvent, '2025-05-10'), true);
+    assert.equal(matchesEventSearch(archivedEvent, 'May'), true);
+
+    // Match by archived date (ISO, year, month, formatted text)
+    assert.equal(matchesEventSearch(archivedEvent, '2026-11'), true);
+    assert.equal(matchesEventSearch(archivedEvent, 'November'), true);
+    assert.equal(matchesEventSearch(archivedEvent, 'Nov'), true);
+    assert.equal(matchesEventSearch(archivedEvent, '7 Nov 2026'), true);
+    assert.equal(matchesEventSearch(archivedEvent, 'archived 7 nov'), true);
+
+    // Filter list containing archived events
+    const list = [
+      archivedEvent,
+      {
+        id: 'arch-2',
+        name: 'Farewell Party',
+        eventDate: '2024-03-01',
+        archivedAt: '2025-04-12T08:00:00Z',
+      },
+    ];
+
+    const novMatches = filterEvents(list, 'November');
+    assert.equal(novMatches.length, 1);
+    assert.equal(novMatches[0].id, 'arch-1');
+
+    const aprMatches = filterEvents(list, 'April');
+    assert.equal(aprMatches.length, 1);
+    assert.equal(aprMatches[0].id, 'arch-2');
+  });
 });

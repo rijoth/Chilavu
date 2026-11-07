@@ -49,6 +49,11 @@ export const EventDetailsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedQuery = useDebounce(searchQuery, 150);
 
+  // Clear search query if navigating between events
+  React.useEffect(() => {
+    setSearchQuery('');
+  }, [eventId]);
+
   const handleClearSearch = () => {
     setSearchQuery('');
   };
@@ -425,15 +430,15 @@ export const EventDetailsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Search Bar when 3 or more expenses exist */}
+          {/* Search Bar when 3 or more expenses/items exist */}
           {expenses.length >= 3 && (
             <div className="mb-3">
               <SearchBar
                 value={searchQuery}
                 onChange={setSearchQuery}
                 onClear={handleClearSearch}
-                placeholder="Search by name or vendor"
-                ariaLabel="Search expenses"
+                placeholder="Search items"
+                ariaLabel="Search items"
               />
             </div>
           )}
@@ -454,7 +459,7 @@ export const EventDetailsPage: React.FC = () => {
           ) : filteredExpenses.length === 0 ? (
             <EmptyState
               icon={SearchX}
-              title={`No expenses match '${debouncedQuery.trim() || searchQuery.trim()}'`}
+              title={`No items match '${debouncedQuery.trim() || searchQuery.trim()}'`}
               description="Check for typos or try searching with a different name or vendor."
               actionLabel="Clear search"
               actionIcon={X}
@@ -462,7 +467,7 @@ export const EventDetailsPage: React.FC = () => {
               className="mt-2 py-10"
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 pb-24">
               {filteredExpenses.map((expense) => (
                 <ExpenseCard
                   key={expense.id}
