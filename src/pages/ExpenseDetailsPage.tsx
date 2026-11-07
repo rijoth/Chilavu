@@ -90,7 +90,7 @@ export const ExpenseDetailsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col pb-24">
+    <div className="flex-1 flex flex-col">
       {/* Header */}
       <PageHeader
         title={expense.name}
@@ -253,7 +253,11 @@ export const ExpenseDetailsPage: React.FC = () => {
         <button
           type="button"
           onClick={handleRecordNewPayment}
-          className="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-2xl bg-pine hover:bg-pine/90 text-white shadow-xl flex items-center justify-center transition-transform active:scale-90 hover:scale-105"
+          className="fixed z-30 w-14 h-14 rounded-2xl bg-pine hover:bg-pine/90 text-white shadow-xl flex items-center justify-center transition-transform active:scale-90 hover:scale-105"
+          style={{
+            bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+            right: 'max(1rem, calc(50vw - 320px + 1rem))',
+          }}
           aria-label="Record payment"
         >
           <Plus className="w-7 h-7 stroke-[2.2]" />

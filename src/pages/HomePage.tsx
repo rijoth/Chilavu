@@ -79,7 +79,7 @@ export const HomePage: React.FC = () => {
   }, [events]);
 
   return (
-    <div className="flex-1 flex flex-col pb-24">
+    <div className="flex-1 flex flex-col">
       {/* Top Header */}
       <header className="sticky top-0 z-30 bg-base border-b border-overlay/60 px-4 py-4 sm:px-6">
         <div className="flex items-center justify-between">
@@ -219,7 +219,7 @@ export const HomePage: React.FC = () => {
 
         {/* Event Cards or Empty State */}
         {isLoading ? (
-          <div className="space-y-2.5 sm:space-y-3 pb-24">
+          <div className="space-y-2.5 sm:space-y-3 pb-6">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-20 rounded-2xl bg-surface animate-pulse border border-overlay" />
             ))}
@@ -244,7 +244,7 @@ export const HomePage: React.FC = () => {
             className="mt-4 my-auto py-12"
           />
         ) : (
-          <div className="space-y-2.5 sm:space-y-3 pb-24">
+          <div className="space-y-2.5 sm:space-y-3 pb-6">
             {filteredEvents.map((event) => (
               <EventCard key={event.id} event={event} onArchive={handleArchiveEvent} />
             ))}
@@ -256,7 +256,11 @@ export const HomePage: React.FC = () => {
       <button
         type="button"
         onClick={() => setIsCreateOpen(true)}
-        className="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-2xl bg-pine hover:bg-pine/90 text-white shadow-xl flex items-center justify-center transition-transform active:scale-90 hover:scale-105"
+        className="fixed z-30 w-14 h-14 rounded-2xl bg-pine hover:bg-pine/90 text-white shadow-xl flex items-center justify-center transition-transform active:scale-90 hover:scale-105"
+        style={{
+          bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+          right: 'max(1rem, calc(50vw - 320px + 1rem))',
+        }}
         aria-label="Create new event"
       >
         <Plus className="w-7 h-7 stroke-[2.2]" />

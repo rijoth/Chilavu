@@ -23,7 +23,7 @@ export const ArchivePage: React.FC = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col pb-24">
+    <div className="flex-1 flex flex-col">
       {/* Header with back button */}
       <PageHeader
         title="Archived Events"
@@ -55,7 +55,7 @@ export const ArchivePage: React.FC = () => {
 
         {/* Content list or empty states */}
         {isLoading ? (
-          <div className="space-y-2.5 sm:space-y-3 pb-24">
+          <div className="space-y-2.5 sm:space-y-3 pb-6">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
@@ -81,7 +81,7 @@ export const ArchivePage: React.FC = () => {
             className="mt-4 my-auto py-12"
           />
         ) : (
-          <div className="space-y-2.5 sm:space-y-3 pb-24">
+          <div className="space-y-2.5 sm:space-y-3 pb-6">
             {filteredEvents.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}

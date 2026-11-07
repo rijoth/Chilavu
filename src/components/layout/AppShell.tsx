@@ -27,13 +27,18 @@ export const AppShell: React.FC = () => {
       <OfflineIndicator />
 
       {/* Primary App Shell Container */}
-      <div className="flex-1 flex flex-col max-w-2xl w-full mx-auto min-h-screen relative pb-8">
+      <div className="flex-1 flex flex-col max-w-2xl w-full mx-auto min-h-screen relative">
         <main className="flex-1 flex flex-col">
           <Outlet />
         </main>
 
         {/* Subtle Footer */}
-        <footer className="mt-auto py-6 px-4 text-center border-t border-overlay/40">
+        <footer
+          className="mt-auto pt-6 px-4 text-center border-t border-overlay/40"
+          style={{
+            paddingBottom: 'calc(56px + 24px + 16px + env(safe-area-inset-bottom, 0px))',
+          }}
+        >
           <p className="text-xs text-muted font-normal tracking-wide select-none">
             ©{' '}
             <a
