@@ -19,6 +19,7 @@ import { importService } from '@/features/backup/importService';
 import { validateBackupJson } from '@/features/backup/importValidation';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { useUIStore } from '@/stores/uiStore';
+import { ChilavuLogo } from '@/components/common/ChilavuLogo';
 import type { ThemeMode } from '@/types/settings';
 import type { BackupFile, ImportAnalysis } from '@/features/backup/backupSchema';
 
@@ -331,22 +332,38 @@ export const SettingsPage: React.FC = () => {
         </section>
 
         {/* Section: About & Privacy */}
-        <section className="rounded-2xl bg-surface border border-overlay p-5 shadow-xs space-y-3">
-          <div className="flex items-center gap-2 text-text font-bold text-sm">
+        <section className="rounded-2xl bg-surface border border-overlay p-5 shadow-xs space-y-4">
+          <div className="flex items-center gap-3">
+            <ChilavuLogo size="md" />
+            <div>
+              <h3 className="text-base font-bold text-text">Chilavu</h3>
+              <p className="text-xs text-subtle">Local-first event expense tracker</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-text font-bold text-sm pt-1">
             <ShieldCheck className="w-5 h-5 text-foam" />
             <span>Privacy & Local Storage</span>
           </div>
 
           <p className="text-xs text-subtle leading-relaxed">
-            Kanakku runs entirely inside your browser. No user accounts, cookies, telemetry, or remote servers exist.
+            Chilavu runs entirely inside your browser. No user accounts, cookies, telemetry, or remote servers exist. All your events, expenses, and payments remain stored privately on your device.
           </p>
 
-          <div className="p-3.5 rounded-xl bg-overlay/40 border border-overlay text-xs text-subtle space-y-1">
-            <div className="flex justify-between">
+          <div className="p-3.5 rounded-xl bg-overlay/40 border border-overlay text-xs text-subtle space-y-2">
+            <div className="flex justify-between items-center">
               <span>Application</span>
-              <span className="font-semibold text-text">Kanakku</span>
+              <span className="font-semibold text-text">Chilavu</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
+              <span>Logo Mark</span>
+              <span className="font-bold text-white px-2 py-0.5 rounded-md bg-pine text-xs font-['Manjari']">ചി</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span>Storage Architecture</span>
+              <span className="text-text font-medium">Local-first IndexedDB</span>
+            </div>
+            <div className="flex justify-between items-center">
               <span>Version</span>
               <span className="font-mono text-text">1.0.0</span>
             </div>

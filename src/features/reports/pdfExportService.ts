@@ -46,7 +46,7 @@ export const pdfExportService = {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.text('Kanakku', 55, cursorY + 36);
+    doc.text('Chilavu', 55, cursorY + 36);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
@@ -243,19 +243,19 @@ export const pdfExportService = {
       doc.setFontSize(8);
       doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
       doc.text(
-        `Kanakku · Page ${i} of ${totalPages}`,
+        `Chilavu · Page ${i} of ${totalPages}`,
         doc.internal.pageSize.getWidth() / 2,
         doc.internal.pageSize.getHeight() - 20,
         { align: 'center' }
       );
     }
 
-    // Generate safe filename: kanakku-{name}-{date}.pdf
+    // Generate safe filename: chilavu-{name}-{date}.pdf
     const safeName = event.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'event';
-    const filename = `kanakku-${safeName}-${getTodayDateString()}.pdf`;
+    const filename = `chilavu-${safeName}-${getTodayDateString()}.pdf`;
 
     doc.save(filename);
   },

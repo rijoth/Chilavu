@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Share2, X, Smartphone } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { ChilavuLogo } from '@/components/common/ChilavuLogo';
 
 export const PWAInstallBanner: React.FC = () => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
@@ -15,11 +16,9 @@ export const PWAInstallBanner: React.FC = () => {
     return (
       <div className="mx-4 mb-4 p-3.5 rounded-2xl bg-surface border border-pine/30 shadow-sm flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-pine/15 text-pine flex items-center justify-center shrink-0">
-            <Smartphone className="w-5 h-5" />
-          </div>
+          <ChilavuLogo size="sm" />
           <div className="min-w-0">
-            <h4 className="text-sm font-semibold text-text truncate">Install Kanakku</h4>
+            <h4 className="text-sm font-semibold text-text truncate">Install Chilavu</h4>
             <p className="text-xs text-subtle truncate">Fast, offline-ready app on your device</p>
           </div>
         </div>
@@ -50,11 +49,9 @@ export const PWAInstallBanner: React.FC = () => {
       <>
         <div className="mx-4 mb-4 p-3.5 rounded-2xl bg-surface border border-overlay shadow-sm flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-overlay text-iris flex items-center justify-center shrink-0">
-              <Share2 className="w-5 h-5" />
-            </div>
+            <ChilavuLogo size="sm" />
             <div className="min-w-0">
-              <h4 className="text-sm font-semibold text-text truncate">Install on iPhone / iPad</h4>
+              <h4 className="text-sm font-semibold text-text truncate">Install Chilavu on iOS</h4>
               <p className="text-xs text-subtle truncate">Add to Home Screen for offline access</p>
             </div>
           </div>

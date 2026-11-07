@@ -7,6 +7,7 @@ import { EventFormModal } from '@/components/events/EventFormModal';
 import { EmptyState } from '@/components/common/EmptyState';
 import { CurrencyDisplay } from '@/components/common/CurrencyDisplay';
 import { PWAInstallBanner } from '@/components/common/PWAInstallBanner';
+import { ChilavuLogo } from '@/components/common/ChilavuLogo';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -42,17 +43,7 @@ export const HomePage: React.FC = () => {
       {/* Top Header */}
       <header className="sticky top-0 z-30 bg-base border-b border-overlay/60 px-4 py-4 sm:px-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-pine flex items-center justify-center text-white shadow-md shadow-pine/20">
-              <span className="font-bold text-lg font-mono">₹</span>
-            </div>
-            <div>
-              <span className="text-xl font-black text-text tracking-tight flex items-center gap-1.5">
-                Kanakku
-              </span>
-              <span className="text-[11px] text-subtle block font-medium">Local expense tracker</span>
-            </div>
-          </div>
+          <ChilavuLogo size="md" showWordmark subtitle="Local event expense tracker" />
 
           <button
             type="button"

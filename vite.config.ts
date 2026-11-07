@@ -14,9 +14,9 @@ export default defineConfig(() => {
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
         manifest: {
           id: '/',
-          name: 'Kanakku',
-          short_name: 'Kanakku',
-          description: 'Local expense tracker with Rosé Pine design and offline PWA support.',
+          name: 'Chilavu',
+          short_name: 'Chilavu',
+          description: 'Local-first event expense and payment tracker with Rosé Pine design and offline PWA support.',
           theme_color: '#191724',
           background_color: '#191724',
           display: 'standalone',

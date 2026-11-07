@@ -1,4 +1,6 @@
-# HANDOVER.md — EventLedger Status & Verification
+# HANDOVER.md — Chilavu Status & Verification
+
+Branding: **Chilavu** (Standalone logo mark: **ചി**)
 
 ## Completed Phases
 

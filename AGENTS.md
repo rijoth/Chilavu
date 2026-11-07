@@ -1,7 +1,7 @@
-# AGENTS.md — EventLedger Developer & Architecture Guide
+# AGENTS.md — Chilavu Developer & Architecture Guide
 
 ## 1. Project Overview
-EventLedger is a lightweight, local-first event expense management web application. It organizes financial information around events (e.g. weddings, birthdays, trips, reunions) rather than isolated transactions. An event contains multiple expenses, and each expense can contain multiple payments.
+Chilavu (branding mark: **ചി**) is a lightweight, local-first event expense management web application. It organizes financial information around events (e.g. weddings, birthdays, trips, reunions) rather than isolated transactions. An event contains multiple expenses, and each expense can contain multiple payments. Underlying database and backup contracts remain backward-compatible with existing IndexedDB records (`EventLedgerDB`).
 
 ## 2. Technology Stack
 - **Language**: TypeScript (strict mode)
