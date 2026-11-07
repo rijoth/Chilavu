@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Settings, CalendarHeart, SearchX, X } from 'lucide-react';
-import { useEvents } from '@/hooks/useEvents';
+import { Plus, Settings, CalendarHeart, SearchX, X, Archive } from 'lucide-react';
+import { useEvents, type EventWithSummary } from '@/hooks/useEvents';
 import { useDebounce } from '@/hooks/useDebounce';
 import { filterEvents } from '@/features/events/eventSearch';
 import { EventCard } from '@/components/events/EventCard';
@@ -11,16 +11,40 @@ import { SearchBar } from '@/components/common/SearchBar';
 import { CurrencyDisplay } from '@/components/common/CurrencyDisplay';
 import { PWAInstallBanner } from '@/components/common/PWAInstallBanner';
 import { ChilavuLogo } from '@/components/common/ChilavuLogo';
+import { useUIStore } from '@/stores/uiStore';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { events, isLoading } = useEvents();
+  const { events, archivedEvents, isLoading } = useEvents();
+  const { showToast, archiveEvent, unarchiveEvent } = useUIStore();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedQuery = useDebounce(searchQuery, 150);
 
   const handleClearSearch = () => {
     setSearchQuery('');
+  };
+
+  const handleArchiveEvent = async (eventToArchive: EventWithSummary) => {
+    const canArchive = (eventToArchive.expenseCount ?? 0) > 0 && eventToArchive.summary.pending === 0;
+    if (!canArchive) {
+      showToast('Settle all payments to archive', 'error');
+      return;
+    }
+
+    try {
+      await archiveEvent(eventToArchive.id);
+      showToast(`Archived "${eventToArchive.name}"`, 'info', {
+        label: 'Undo',
+        onClick: async () => {
+          await unarchiveEvent(eventToArchive.id);
+          showToast(`Restored "${eventToArchive.name}"`, 'success');
+        },
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to archive event';
+      showToast(msg, 'error');
+    }
   };
 
   // Filter events live by query (event name and event date)
@@ -60,14 +84,30 @@ export const HomePage: React.FC = () => {
         <div className="flex items-center justify-between">
           <ChilavuLogo size="md" showWordmark subtitle="Local event expense tracker" />
 
-          <button
-            type="button"
-            onClick={() => navigate('/settings')}
-            className="p-2.5 rounded-xl text-subtle hover:text-text hover:bg-surface active:scale-95 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
-            aria-label="Settings"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => navigate('/archive')}
+              className="relative p-2.5 rounded-xl text-subtle hover:text-text hover:bg-surface active:scale-95 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label={`Archived events${archivedEvents.length > 0 ? ` (${archivedEvents.length})` : ''}`}
+            >
+              <Archive className="w-5 h-5" />
+              {archivedEvents.length > 0 && (
+                <span className="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-iris text-surface leading-none shadow-xs">
+                  {archivedEvents.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/settings')}
+              className="p-2.5 rounded-xl text-subtle hover:text-text hover:bg-surface active:scale-95 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -189,7 +229,7 @@ export const HomePage: React.FC = () => {
         ) : (
           <div className="space-y-2.5 sm:space-y-3 pb-24">
             {filteredEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
+              <EventCard key={event.id} event={event} onArchive={handleArchiveEvent} />
             ))}
           </div>
         )}

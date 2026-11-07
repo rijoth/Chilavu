@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   FileText,
   AlertCircle,
+  Archive,
 } from 'lucide-react';
 import { useExpense } from '@/hooks/useExpenses';
 import { expenseService } from '@/features/expenses/expenseService';
@@ -65,6 +66,7 @@ export const ExpenseDetailsPage: React.FC = () => {
   }
 
   const currency = parentEvent.currency;
+  const isArchived = Boolean(parentEvent.archivedAt);
 
   const handleDeleteExpense = async () => {
     try {
@@ -96,28 +98,37 @@ export const ExpenseDetailsPage: React.FC = () => {
         hasBack={true}
         backTo={`/events/${parentEvent.id}`}
         rightAction={
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setIsEditModalOpen(true)}
-              className="p-2 text-subtle hover:text-text hover:bg-surface rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label="Edit expense"
-            >
-              <Edit className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsDeleteDialogOpen(true)}
-              className="p-2 text-subtle hover:text-love hover:bg-love/15 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label="Delete expense"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
-          </div>
+          !isArchived ? (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(true)}
+                className="p-2 text-subtle hover:text-text hover:bg-surface rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="Edit expense"
+              >
+                <Edit className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                className="p-2 text-subtle hover:text-love hover:bg-love/15 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="Delete expense"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </div>
+          ) : undefined
         }
       />
 
       <div className="px-4 sm:px-6 pt-4 space-y-5">
+        {/* Archived Banner if parent event is archived */}
+        {isArchived && (
+          <div className="p-3.5 rounded-2xl bg-surface/80 border border-iris/30 flex items-center gap-2.5 text-xs text-subtle shadow-xs">
+            <Archive className="w-4 h-4 text-iris shrink-0" />
+            <span>This expense belongs to an archived event and is in read-only mode.</span>
+          </div>
+        )}
         {/* Metadata & Status Card */}
         <div className="p-4 rounded-2xl bg-surface border border-overlay flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div className="flex flex-wrap items-center gap-3 text-xs text-subtle">
@@ -232,19 +243,22 @@ export const ExpenseDetailsPage: React.FC = () => {
             payments={payments}
             currency={currency}
             onEditPayment={handleEditPayment}
+            readOnly={isArchived}
           />
         </section>
       </div>
 
-      {/* Floating Action Button */}
-      <button
-        type="button"
-        onClick={handleRecordNewPayment}
-        className="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-2xl bg-pine hover:bg-pine/90 text-white shadow-xl flex items-center justify-center transition-transform active:scale-90 hover:scale-105"
-        aria-label="Record payment"
-      >
-        <Plus className="w-7 h-7 stroke-[2.2]" />
-      </button>
+      {/* Floating Action Button (hidden in read-only mode) */}
+      {!isArchived && (
+        <button
+          type="button"
+          onClick={handleRecordNewPayment}
+          className="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-2xl bg-pine hover:bg-pine/90 text-white shadow-xl flex items-center justify-center transition-transform active:scale-90 hover:scale-105"
+          aria-label="Record payment"
+        >
+          <Plus className="w-7 h-7 stroke-[2.2]" />
+        </button>
+      )}
 
       {/* Record or Edit Payment Modal */}
       <PaymentFormModal

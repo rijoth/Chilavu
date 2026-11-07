@@ -4,6 +4,7 @@ import { HomePage } from '@/pages/HomePage';
 import { EventDetailsPage } from '@/pages/EventDetailsPage';
 import { ExpenseDetailsPage } from '@/pages/ExpenseDetailsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { ArchivePage } from '@/pages/ArchivePage';
 
 export const router = createBrowserRouter([
   {
@@ -13,6 +14,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: 'archive',
+        element: <ArchivePage />,
       },
       {
         path: 'events/:eventId',

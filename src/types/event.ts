@@ -7,6 +7,7 @@ export interface Event {
   budgetAmount?: number; // Integer minor units (e.g. 50000000 for ₹5,00,000.00)
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
+  archivedAt?: string; // ISO 8601, missing/undefined means not archived
 }
 
 export interface EventSummary {

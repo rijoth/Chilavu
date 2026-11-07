@@ -84,6 +84,12 @@ export function validateBackupJson(jsonString: string): ValidationSummary {
     if (ev.budgetAmount !== undefined && ev.budgetAmount !== null && !isValidMinorAmount(ev.budgetAmount)) {
       errors.push(`Event "${ev.name || ev.id}" has invalid budgetAmount: ${ev.budgetAmount}`);
     }
+
+    if (ev.archivedAt !== undefined && ev.archivedAt !== null) {
+      if (typeof ev.archivedAt !== 'string' || isNaN(Date.parse(ev.archivedAt))) {
+        errors.push(`Event "${ev.name || ev.id}" has invalid archivedAt timestamp: ${ev.archivedAt}`);
+      }
+    }
   });
 
   // Validate Expenses

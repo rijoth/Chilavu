@@ -116,4 +116,79 @@ describe('Backup Validation', () => {
     assert.equal(result.isValid, false);
     assert.match(result.errors[0], /Duplicate event ID/);
   });
+
+  it('accepts events with valid archivedAt ISO timestamp and preserves it', () => {
+    const backupWithArchive = JSON.stringify({
+      app: 'EventLedger',
+      schemaVersion: 1,
+      exportedAt: '2026-11-07T12:00:00.000Z',
+      data: {
+        events: [
+          {
+            id: 'ev-archived',
+            name: 'Settled Trip',
+            currency: 'EUR',
+            createdAt: '2026-11-01T10:00:00.000Z',
+            updatedAt: '2026-11-07T12:00:00.000Z',
+            archivedAt: '2026-11-07T12:00:00.000Z',
+          },
+        ],
+        expenses: [],
+        payments: [],
+      },
+    });
+
+    const result = validateBackupJson(backupWithArchive);
+    assert.equal(result.isValid, true);
+    assert.equal(result.parsedFile?.data.events[0].archivedAt, '2026-11-07T12:00:00.000Z');
+  });
+
+  it('accepts events with missing archivedAt and treats as not archived (backward compatibility)', () => {
+    const legacyBackup = JSON.stringify({
+      app: 'EventLedger',
+      schemaVersion: 1,
+      exportedAt: '2026-11-07T12:00:00.000Z',
+      data: {
+        events: [
+          {
+            id: 'ev-legacy',
+            name: 'Legacy Event',
+            currency: 'USD',
+            createdAt: '2026-11-01T10:00:00.000Z',
+            updatedAt: '2026-11-01T10:00:00.000Z',
+          },
+        ],
+        expenses: [],
+        payments: [],
+      },
+    });
+
+    const result = validateBackupJson(legacyBackup);
+    assert.equal(result.isValid, true);
+    assert.equal(result.parsedFile?.data.events[0].archivedAt, undefined);
+  });
+
+  it('rejects events with invalid archivedAt timestamp', () => {
+    const invalidArchiveBackup = JSON.stringify({
+      app: 'EventLedger',
+      schemaVersion: 1,
+      exportedAt: '2026-11-07T12:00:00.000Z',
+      data: {
+        events: [
+          {
+            id: 'ev-invalid',
+            name: 'Bad Date',
+            currency: 'USD',
+            archivedAt: 'not-a-valid-date',
+          },
+        ],
+        expenses: [],
+        payments: [],
+      },
+    });
+
+    const result = validateBackupJson(invalidArchiveBackup);
+    assert.equal(result.isValid, false);
+    assert.match(result.errors[0], /invalid archivedAt timestamp/);
+  });
 });

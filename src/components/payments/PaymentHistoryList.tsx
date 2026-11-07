@@ -11,12 +11,14 @@ interface PaymentHistoryListProps {
   payments: Payment[];
   currency: string;
   onEditPayment: (payment: Payment) => void;
+  readOnly?: boolean;
 }
 
 export const PaymentHistoryList: React.FC<PaymentHistoryListProps> = ({
   payments,
   currency,
   onEditPayment,
+  readOnly = false,
 }) => {
   const showToast = useUIStore((s) => s.showToast);
   const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
@@ -82,24 +84,26 @@ export const PaymentHistoryList: React.FC<PaymentHistoryListProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => onEditPayment(p)}
-                className="p-2 text-subtle hover:text-text hover:bg-overlay rounded-xl transition min-h-[44px] min-w-[44px] flex items-center justify-center"
-                aria-label="Edit payment"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentToDelete(p)}
-                className="p-2 text-subtle hover:text-love hover:bg-love/10 rounded-xl transition min-h-[44px] min-w-[44px] flex items-center justify-center"
-                aria-label="Delete payment"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
+            {!readOnly && (
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onEditPayment(p)}
+                  className="p-2 text-subtle hover:text-text hover:bg-overlay rounded-xl transition min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  aria-label="Edit payment"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentToDelete(p)}
+                  className="p-2 text-subtle hover:text-love hover:bg-love/10 rounded-xl transition min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  aria-label="Delete payment"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

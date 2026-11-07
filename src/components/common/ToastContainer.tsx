@@ -34,14 +34,31 @@ export const ToastContainer: React.FC = () => {
               {icon}
               <span className="truncate font-medium">{toast.message}</span>
             </div>
-            <button
-              type="button"
-              onClick={() => removeToast(toast.id)}
-              className="p-1 text-muted hover:text-text rounded-md shrink-0 transition-colors"
-              aria-label="Dismiss toast"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {toast.action && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const actionFn = toast.action?.onClick;
+                    removeToast(toast.id);
+                    if (actionFn) {
+                      await actionFn();
+                    }
+                  }}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold text-iris bg-iris/15 hover:bg-iris/25 active:scale-95 transition"
+                >
+                  {toast.action.label}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => removeToast(toast.id)}
+                className="p-1 text-muted hover:text-text rounded-md shrink-0 transition-colors"
+                aria-label="Dismiss toast"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         );
       })}

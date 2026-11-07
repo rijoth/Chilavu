@@ -12,6 +12,8 @@ import {
   AlertCircle,
   SearchX,
   X,
+  Archive,
+  ArchiveRestore,
 } from 'lucide-react';
 import { useEvent } from '@/hooks/useEvents';
 import { useExpenses } from '@/hooks/useExpenses';
@@ -27,13 +29,13 @@ import { EventFormModal } from '@/components/events/EventFormModal';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EmptyState } from '@/components/common/EmptyState';
 import { SearchBar } from '@/components/common/SearchBar';
-import { formatDate } from '@/lib/dates';
+import { formatDate, formatLocalDate } from '@/lib/dates';
 import { useUIStore } from '@/stores/uiStore';
 
 export const EventDetailsPage: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
-  const showToast = useUIStore((s) => s.showToast);
+  const { showToast, archiveEvent, unarchiveEvent } = useUIStore();
 
   const { event, summary, isLoading: isEventLoading, notFound } = useEvent(eventId);
   const { expenses, isLoading: isExpensesLoading } = useExpenses(eventId);
@@ -105,11 +107,48 @@ export const EventDetailsPage: React.FC = () => {
     }
   };
 
+  const isArchived = Boolean(event.archivedAt);
+  const canArchive = expenses.length > 0 && summary.pending === 0;
+  const archiveDisabledHint = 'Settle all payments to archive';
+
+  const handleArchive = async () => {
+    setIsMenuOpen(false);
+    if (!canArchive) {
+      showToast(archiveDisabledHint, 'error');
+      return;
+    }
+    try {
+      await archiveEvent(event.id);
+      navigate('/');
+      showToast(`Archived "${event.name}"`, 'info', {
+        label: 'Undo',
+        onClick: async () => {
+          await unarchiveEvent(event.id);
+          showToast(`Restored "${event.name}"`, 'success');
+        },
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to archive event';
+      showToast(msg, 'error');
+    }
+  };
+
+  const handleUnarchive = async () => {
+    setIsMenuOpen(false);
+    try {
+      await unarchiveEvent(event.id);
+      showToast(`Unarchived "${event.name}"`, 'success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to unarchive event';
+      showToast(msg, 'error');
+    }
+  };
+
   const handleDeleteEvent = async () => {
     try {
       await eventService.deleteEvent(event.id);
       showToast('Event deleted', 'info');
-      navigate('/');
+      navigate(isArchived ? '/archive' : '/');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to delete event';
       showToast(msg, 'error');
@@ -130,7 +169,7 @@ export const EventDetailsPage: React.FC = () => {
             : event.currency
         }
         hasBack={true}
-        backTo="/"
+        backTo={isArchived ? '/archive' : '/'}
         rightAction={
           <div className="relative">
             <button
@@ -148,39 +187,99 @@ export const EventDetailsPage: React.FC = () => {
                   className="fixed inset-0 z-40"
                   onClick={() => setIsMenuOpen(false)}
                 />
-                <div className="absolute right-0 top-12 z-50 w-52 rounded-2xl bg-surface border border-overlay shadow-xl p-1.5 animate-in fade-in duration-150">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      setIsEditModalOpen(true);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-text hover:bg-overlay rounded-xl transition"
-                  >
-                    <Edit className="w-4 h-4 text-subtle" />
-                    Edit Event Details
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleExportPdf}
-                    disabled={isExportingPdf}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-text hover:bg-overlay rounded-xl transition"
-                  >
-                    <FileDown className="w-4 h-4 text-foam" />
-                    {isExportingPdf ? 'Generating PDF...' : 'Export PDF Report'}
-                  </button>
-                  <div className="my-1 border-t border-overlay" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      setIsDeleteDialogOpen(true);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-love hover:bg-love/15 rounded-xl transition"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete Event
-                  </button>
+                <div className="absolute right-0 top-12 z-50 w-56 rounded-2xl bg-surface border border-overlay shadow-xl p-1.5 animate-in fade-in duration-150">
+                  {!isArchived ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setIsEditModalOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-text hover:bg-overlay rounded-xl transition"
+                      >
+                        <Edit className="w-4 h-4 text-subtle" />
+                        Edit Event Details
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleExportPdf}
+                        disabled={isExportingPdf}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-text hover:bg-overlay rounded-xl transition"
+                      >
+                        <FileDown className="w-4 h-4 text-foam" />
+                        {isExportingPdf ? 'Generating PDF...' : 'Export PDF Report'}
+                      </button>
+                      <div className="my-1 border-t border-overlay" />
+                      {canArchive ? (
+                        <button
+                          type="button"
+                          onClick={handleArchive}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-iris hover:bg-iris/15 rounded-xl transition"
+                        >
+                          <Archive className="w-4 h-4 text-iris" />
+                          Archive Event
+                        </button>
+                      ) : (
+                        <div
+                          className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-muted/60 rounded-xl cursor-not-allowed select-none"
+                          title={archiveDisabledHint}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Archive className="w-4 h-4 text-muted/50" />
+                            <span>Archive Event</span>
+                          </div>
+                          <span className="text-[10px] text-muted italic ml-1.5">
+                            {archiveDisabledHint}
+                          </span>
+                        </div>
+                      )}
+                      <div className="my-1 border-t border-overlay" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-love hover:bg-love/15 rounded-xl transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Event
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleUnarchive}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-iris hover:bg-iris/15 rounded-xl transition"
+                      >
+                        <ArchiveRestore className="w-4 h-4 text-iris" />
+                        Unarchive Event
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleExportPdf}
+                        disabled={isExportingPdf}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-text hover:bg-overlay rounded-xl transition"
+                      >
+                        <FileDown className="w-4 h-4 text-foam" />
+                        {isExportingPdf ? 'Generating PDF...' : 'Export PDF Report'}
+                      </button>
+                      <div className="my-1 border-t border-overlay" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-love hover:bg-love/15 rounded-xl transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Event
+                      </button>
+                    </>
+                  )}
                 </div>
               </>
             )}
@@ -189,6 +288,28 @@ export const EventDetailsPage: React.FC = () => {
       />
 
       <div className="px-4 sm:px-6 pt-4 space-y-5">
+        {/* Archived Banner in read-only mode */}
+        {isArchived && (
+          <div className="p-3.5 rounded-2xl bg-surface/90 border border-iris/30 flex items-center justify-between gap-3 text-xs shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Archive className="w-4 h-4 text-iris shrink-0" />
+              <div className="min-w-0">
+                <span className="font-semibold text-text block">Archived Event</span>
+                <span className="text-[11px] text-muted block truncate">
+                  Archived {formatLocalDate(event.archivedAt)} · Read-only mode
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleUnarchive}
+              className="px-3 py-1.5 rounded-xl bg-iris/15 hover:bg-iris/25 text-iris font-bold text-xs transition active:scale-95 shrink-0 flex items-center gap-1.5"
+            >
+              <ArchiveRestore className="w-3.5 h-3.5" />
+              Unarchive
+            </button>
+          </div>
+        )}
         {/* Description if present */}
         {event.description && (
           <p className="text-xs text-subtle bg-surface/50 border border-overlay p-3 rounded-xl leading-relaxed">
@@ -321,9 +442,13 @@ export const EventDetailsPage: React.FC = () => {
             <EmptyState
               icon={Receipt}
               title="No expenses added"
-              description="Add vendors, bookings, or costs (like venue, photography, or food) to begin tracking payments."
-              actionLabel="Add Expense"
-              onAction={() => setIsAddExpenseOpen(true)}
+              description={
+                isArchived
+                  ? 'This archived event contains no expenses.'
+                  : 'Add vendors, bookings, or costs (like venue, photography, or food) to begin tracking payments.'
+              }
+              actionLabel={!isArchived ? 'Add Expense' : undefined}
+              onAction={!isArchived ? () => setIsAddExpenseOpen(true) : undefined}
               className="mt-2 py-10"
             />
           ) : filteredExpenses.length === 0 ? (
@@ -350,15 +475,17 @@ export const EventDetailsPage: React.FC = () => {
         </section>
       </div>
 
-      {/* Floating Action Button for adding expense on mobile */}
-      <button
-        type="button"
-        onClick={() => setIsAddExpenseOpen(true)}
-        className="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-2xl bg-pine hover:bg-pine/90 text-white shadow-xl flex items-center justify-center transition-transform active:scale-90 hover:scale-105"
-        aria-label="Add expense"
-      >
-        <Plus className="w-7 h-7 stroke-[2.2]" />
-      </button>
+      {/* Floating Action Button for adding expense on mobile (hidden in read-only mode) */}
+      {!isArchived && (
+        <button
+          type="button"
+          onClick={() => setIsAddExpenseOpen(true)}
+          className="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-2xl bg-pine hover:bg-pine/90 text-white shadow-xl flex items-center justify-center transition-transform active:scale-90 hover:scale-105"
+          aria-label="Add expense"
+        >
+          <Plus className="w-7 h-7 stroke-[2.2]" />
+        </button>
+      )}
 
       {/* Add Expense Modal */}
       <ExpenseFormModal

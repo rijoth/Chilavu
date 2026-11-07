@@ -29,8 +29,14 @@ export function useEvents() {
     });
   }, []);
 
+  const allEvents = eventsWithSummary ?? [];
+  const events = allEvents.filter((e) => !e.archivedAt);
+  const archivedEvents = allEvents.filter((e) => Boolean(e.archivedAt));
+
   return {
-    events: eventsWithSummary ?? [],
+    events,
+    archivedEvents,
+    allEvents,
     isLoading: eventsWithSummary === undefined,
   };
 }

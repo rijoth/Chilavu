@@ -100,4 +100,39 @@ export const eventService = {
       await db.events.delete(id);
     });
   },
+
+  async archiveEvent(id: string): Promise<Event> {
+    const existing = await db.events.get(id);
+    if (!existing) {
+      throw new Error(`Event not found: ${id}`);
+    }
+
+    const now = new Date().toISOString();
+    const updated: Event = {
+      ...existing,
+      archivedAt: now,
+      updatedAt: now,
+    };
+
+    await db.events.put(updated);
+    return updated;
+  },
+
+  async unarchiveEvent(id: string): Promise<Event> {
+    const existing = await db.events.get(id);
+    if (!existing) {
+      throw new Error(`Event not found: ${id}`);
+    }
+
+    const now = new Date().toISOString();
+    const updated: Event = {
+      ...existing,
+      updatedAt: now,
+    };
+    delete updated.archivedAt;
+
+    await db.events.put(updated);
+    return updated;
+  },
 };
+
