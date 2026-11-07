@@ -1,6 +1,8 @@
 {
-  "name": "EventLedger",
+  "name": "Kanakku",
   "description": "Lightweight, local-first event expense and payment management application with Rosé Pine design and offline PWA support.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
