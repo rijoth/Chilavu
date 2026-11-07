@@ -135,10 +135,7 @@ export const HomePage: React.FC = () => {
                   key={curr}
                   className="@container p-4 sm:p-5 rounded-2xl bg-surface/75 border border-overlay/80 shadow-xs"
                 >
-                  <div className="flex items-center justify-between mb-2.5">
-                    <span className="text-xs font-medium text-subtle">
-                      All events
-                    </span>
+                  <div className="flex items-center justify-end mb-2.5">
                     <span className="text-xs text-subtle font-medium">
                       {totals.count} {totals.count === 1 ? 'event' : 'events'}
                     </span>
