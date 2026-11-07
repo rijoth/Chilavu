@@ -133,21 +133,21 @@ export const HomePage: React.FC = () => {
               return (
                 <div
                   key={curr}
-                  className="@container p-4 sm:p-5 rounded-2xl bg-surface/75 border border-overlay/80 shadow-xs"
+                  className="@container px-4 py-3.5 sm:px-5 sm:py-4 rounded-2xl bg-surface/75 border border-overlay/80 shadow-xs"
                 >
-                  <div className="flex items-center justify-end mb-2.5">
-                    <span className="text-xs text-subtle font-medium">
-                      {totals.count} {totals.count === 1 ? 'event' : 'events'}
-                    </span>
-                  </div>
-
-                  {/* Responsive layout: stacked on narrow screens (<420px), side-by-side on wider screens */}
-                  <div className="flex flex-col @min-[420px]:flex-row min-[420px]:flex-row @min-[420px]:items-baseline min-[420px]:items-baseline justify-between gap-3.5 @min-[420px]:gap-4 min-[420px]:gap-4">
-                    {/* Row 1 / Left Hero: Pending at full width on narrow screens */}
+                  {/* Responsive layout: stacked on narrow screens (<420px), side-by-side with baseline-aligned values on wider screens */}
+                  <div className="flex flex-col @min-[420px]:flex-row min-[420px]:flex-row @min-[420px]:items-end min-[420px]:items-end justify-between gap-3 @min-[420px]:gap-4 min-[420px]:gap-4">
+                    {/* Row 1 / Left Hero: Pending with inline event count, and large amount beneath */}
                     <div className="w-full @min-[420px]:w-auto min-[420px]:w-auto min-w-0">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-subtle block mb-0.5">
-                        Pending
-                      </span>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-subtle">
+                          Pending
+                        </span>
+                        <span className="text-[11px] text-muted select-none">·</span>
+                        <span className="text-[11px] text-muted font-medium">
+                          {totals.count} {totals.count === 1 ? 'event' : 'events'}
+                        </span>
+                      </div>
                       <CurrencyDisplay
                         amount={totals.pending}
                         currency={curr}
@@ -155,32 +155,32 @@ export const HomePage: React.FC = () => {
                         hideDecimalsIfWhole
                         muteDecimals
                         style={{ fontSize: heroFontSize }}
-                        className="font-extrabold block whitespace-nowrap tabular-nums leading-tight"
+                        className="font-extrabold block whitespace-nowrap tabular-nums leading-none"
                       />
                     </div>
 
-                    {/* Row 2 / Right Secondary: Paid and Committed together beneath, separated by divider */}
-                    <div className="flex items-center gap-3 sm:gap-5 shrink-0 min-w-0 justify-start @min-[420px]:justify-end min-[420px]:justify-end text-left @min-[420px]:text-right min-[420px]:text-right pt-2.5 border-t border-overlay/40 @min-[420px]:pt-0 min-[420px]:pt-0 @min-[420px]:border-t-0 min-[420px]:border-t-0">
+                    {/* Row 2 / Right Secondary: Paid and Committed bottom-aligned with Pending amount */}
+                    <div className="flex items-end gap-3 sm:gap-5 shrink-0 min-w-0 justify-start @min-[420px]:justify-end min-[420px]:justify-end text-left @min-[420px]:text-right min-[420px]:text-right pt-2.5 border-t border-overlay/40 @min-[420px]:pt-0 min-[420px]:pt-0 @min-[420px]:border-t-0 min-[420px]:border-t-0">
                       <div className="min-w-0">
-                        <span className="text-[11px] text-subtle block font-medium">Paid</span>
+                        <span className="text-[11px] text-subtle block font-medium mb-1">Paid</span>
                         <CurrencyDisplay
                           amount={totals.paid}
                           currency={curr}
                           highlightStatus="paid"
                           hideDecimalsIfWhole
                           muteDecimals
-                          className="text-sm sm:text-base font-bold block tabular-nums whitespace-nowrap"
+                          className="text-sm sm:text-base font-bold block tabular-nums whitespace-nowrap leading-none"
                         />
                       </div>
-                      <div className="h-6 w-px bg-overlay/80 shrink-0" />
+                      <div className="h-5 w-px bg-overlay/80 shrink-0 mb-0.5" />
                       <div className="min-w-0">
-                        <span className="text-[11px] text-subtle block font-medium">Committed</span>
+                        <span className="text-[11px] text-subtle block font-medium mb-1">Committed</span>
                         <CurrencyDisplay
                           amount={totals.committed}
                           currency={curr}
                           hideDecimalsIfWhole
                           muteDecimals
-                          className="text-sm sm:text-base font-semibold text-text block tabular-nums whitespace-nowrap"
+                          className="text-sm sm:text-base font-semibold text-text block tabular-nums whitespace-nowrap leading-none"
                         />
                       </div>
                     </div>
