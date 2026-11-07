@@ -1,0 +1,1894 @@
+# EventLedger — Product & Technical Design Document
+
+**Document type:** Product Requirements + Software Design Specification  
+**Project:** EventLedger  
+**Version:** 1.0  
+**Status:** Ready for implementation  
+**Application type:** Client-side, offline-first web application  
+**Primary platform:** Mobile browsers and installable PWA
+
+---
+
+# 1. Product Overview
+
+## 1.1 Vision
+
+EventLedger is a lightweight event expense management application designed to help individuals organize and track expenses associated with planned events.
+
+Examples include:
+
+- Weddings
+- Birthday parties
+- Anniversaries
+- Housewarming ceremonies
+- College reunions
+- Family functions
+- Vacations
+- Other personal events
+
+The application organizes financial information around events rather than individual transactions.
+
+An event contains multiple expenses, and each expense can contain multiple payments.
+
+Users should be able to quickly understand:
+
+- How much they expect to spend.
+- How much they have committed.
+- How much they have already paid.
+- How much remains outstanding.
+- Which expenses are fully paid, partially paid, or unpaid.
+
+The application must be simple enough to use without financial or accounting knowledge.
+
+## 1.2 Core Principles
+
+1. **Local-first:** All application data remains in the user's browser.
+2. **Offline-first:** Core functionality must work without an internet connection after the application has loaded.
+3. **Mobile-first:** Design primarily for smartphones, with responsive desktop support.
+4. **Financial correctness:** All monetary calculations must be deterministic and accurate.
+5. **Minimalism:** Avoid unnecessary financial dashboards and complicated workflows.
+6. **Privacy:** No accounts, authentication, analytics, telemetry, or remote data storage.
+7. **Data portability:** Users must be able to export and restore their complete application data.
+8. **Maintainability:** Keep the codebase modular, explicit, and easy for AI coding agents to understand.
+
+## 1.3 Non-Goals
+
+The following features are explicitly outside the initial scope:
+
+- User registration and authentication.
+- Cloud synchronization.
+- Multi-user collaboration.
+- Shared event management.
+- Bank account integration.
+- Automatic transaction imports.
+- Receipt scanning and OCR.
+- AI expense recommendations.
+- Currency conversion.
+- Recurring payments.
+- Push notifications.
+- Accounting and taxation features.
+- Advanced financial analytics.
+
+Do not implement these features unless explicitly requested.
+
+---
+
+# 2. Technology Stack
+
+Use the following technologies.
+
+| Layer | Technology | Responsibility |
+|---|---|---|
+| Language | TypeScript | Application language |
+| UI framework | React | Component rendering |
+| Build tool | Vite | Development and production builds |
+| UI components | Konsta UI | Mobile-oriented components |
+| Styling | Tailwind CSS | Layout and styling |
+| Theme | Rosé Pine | Application visual identity |
+| State management | Zustand | UI and settings state |
+| Persistence | IndexedDB | Local persistent storage |
+| Database wrapper | Dexie.js | IndexedDB management |
+| Routing | React Router | Application navigation |
+| PDF generation | jsPDF + jsPDF-AutoTable | Event reports |
+| Icons | Lucide | Interface icons |
+| Date formatting | date-fns | Date formatting |
+| IDs | crypto.randomUUID() | Record identifiers |
+| Testing | Vitest + React Testing Library | Unit and component testing |
+| PWA | Vite PWA plugin | Offline installation and caching |
+
+Use stable, compatible package versions.
+
+Do not introduce additional dependencies without a clear functional requirement.
+
+## 2.1 Architectural Responsibilities
+
+### React
+
+Responsible for:
+
+- Rendering pages.
+- Handling user interactions.
+- Displaying database-backed information.
+- Managing local component state.
+
+### Zustand
+
+Responsible for:
+
+- Theme preference.
+- Default currency preference.
+- Temporary UI state.
+- Dialog and sheet visibility where global coordination is needed.
+
+Do not store the entire database inside Zustand.
+
+### Dexie
+
+Responsible for:
+
+- Persistent application records.
+- IndexedDB transactions.
+- Database migrations.
+- Indexed queries.
+- Reactive database subscriptions through Dexie's React integration.
+
+IndexedDB is the source of truth for events, expenses, and payments.
+
+### Service layer
+
+Responsible for:
+
+- CRUD operations.
+- Business rules.
+- Financial calculations.
+- Data validation.
+- Import/export operations.
+- PDF report generation.
+
+UI components must not contain database mutation logic or independently implement financial calculations.
+
+---
+
+# 3. Application Structure
+
+The application consists of three primary entities:
+
+```text
+Application
+│
+├── Events
+│   │
+│   ├── Event A
+│   │   ├── Expense A1
+│   │   │   ├── Payment A1-1
+│   │   │   └── Payment A1-2
+│   │   │
+│   │   ├── Expense A2
+│   │   │   └── Payment A2-1
+│   │   │
+│   │   └── Expense A3
+│   │
+│   └── Event B
+│       ├── Expense B1
+│       └── Expense B2
+│
+└── Settings
+```
+
+## 3.1 Events
+
+An event is an independent workspace containing expenses.
+
+Each event has:
+
+- A name.
+- An optional description.
+- An optional event date.
+- A currency.
+- An optional budget target.
+- Creation and modification timestamps.
+
+Each event must have its own currency.
+
+Different events may use different currencies.
+
+## 3.2 Expenses
+
+An expense represents a financial commitment associated with an event.
+
+Examples:
+
+- Photography.
+- Catering.
+- Decoration.
+- Venue.
+- Transportation.
+- Accommodation.
+- Entertainment.
+
+An expense has:
+
+- A name.
+- An expected amount.
+- An optional category.
+- An optional vendor.
+- An optional due date.
+- Optional notes.
+- Creation and modification timestamps.
+
+An expense can contain multiple payment records.
+
+## 3.3 Payments
+
+A payment represents an individual payment made toward an expense.
+
+Examples:
+
+- Advance payment.
+- Second installment.
+- Final settlement.
+
+A payment has:
+
+- An amount.
+- A payment date.
+- An optional payment method.
+- Optional notes.
+- Creation timestamp.
+
+Payments must be independently editable and deletable.
+
+---
+
+# 4. Application Navigation
+
+Keep the navigation minimal.
+
+## 4.1 Routes
+
+| Route | Description |
+|---|---|
+| `/` | Homepage and event listing |
+| `/events/new` | Create event |
+| `/events/:eventId` | Event details |
+| `/events/:eventId/expenses/new` | Create expense |
+| `/events/:eventId/expenses/:expenseId` | Expense details |
+| `/settings` | Application settings |
+
+Invalid routes and missing records must display a meaningful not-found state.
+
+Navigation should support browser back/forward operations.
+
+On mobile, use Konsta UI navigation components where appropriate.
+
+Do not introduce unnecessary navigation tabs.
+
+---
+
+# 5. UX and Screen Specifications
+
+## 5.1 Homepage — Event Listing
+
+The homepage is the primary entry point.
+
+### Layout
+
+Header:
+- Application name or logo.
+- Settings icon.
+
+Main content:
+- Page title: "Your events".
+- Optional compact overall summary.
+- Event cards.
+- Empty state when no events exist.
+
+Floating action button:
+- Positioned at the bottom-right.
+- Uses a plus icon.
+- Opens the create-event interface.
+
+### Event Card
+
+Each event card must display:
+
+- Event name.
+- Event date, if available.
+- Currency.
+- Budget, if configured.
+- Total committed expenses.
+- Total paid.
+- Total outstanding.
+- Payment progress indicator.
+
+Example:
+
+```text
+Wedding                         Active
+
+15 December 2026 · INR
+
+Committed expenses
+₹4,50,000
+
+Paid                  ₹1,80,000
+Outstanding           ₹2,70,000
+
+[Payment progress bar]
+
+```
+
+Tapping the card navigates to event details.
+
+Do not make the homepage a complicated financial dashboard.
+
+### Homepage Aggregation Rules
+
+Since events can have different currencies, do not combine monetary amounts across currencies.
+
+For example:
+
+```text
+INR
+Committed: ₹4,50,000
+Paid:      ₹1,80,000
+Pending:   ₹2,70,000
+
+USD
+Committed: $2,000
+Paid:      $500
+Pending:   $1,500
+```
+
+Grouping totals by currency is acceptable.
+
+Do not perform automatic currency conversion.
+
+### Empty State
+
+When there are no events:
+
+- Display a simple illustration or icon.
+- Display "No events yet".
+- Explain that users can create an event to start tracking expenses.
+- Provide a prominent create-event action.
+
+Do not automatically insert demo records.
+
+## 5.2 Create Event
+
+Creating an event should be quick.
+
+### Fields
+
+| Field | Type | Required |
+|---|---|---|
+| Name | Text | Yes |
+| Description | Multiline text | No |
+| Event date | Date | No |
+| Currency | Currency selector | Yes |
+| Budget target | Monetary input | No |
+
+### Behavior
+
+- Default currency should come from application settings.
+- Users can change the currency for individual events.
+- Budget target may be omitted.
+- Validate the event name.
+- Budget must be a valid non-negative monetary amount.
+- Save the event to IndexedDB.
+- Navigate to the newly created event details page.
+
+If an event already contains expenses, changing its currency must be disallowed unless a future explicit currency migration feature is implemented.
+
+## 5.3 Event Details
+
+This is the most important application screen.
+
+### Header
+
+Display:
+
+- Back navigation.
+- Event name.
+- Event date, if configured.
+- Currency.
+- Event actions menu.
+
+Event actions:
+
+- Edit event.
+- Export event PDF.
+- Delete event.
+
+### Financial Summary
+
+Display:
+
+- Budget target, if configured.
+- Total committed expenses.
+- Total paid.
+- Total outstanding.
+- Budget remaining, if configured.
+- Payment progress.
+
+Example:
+
+```text
+Wedding
+
+Budget:                ₹5,00,000
+Committed:             ₹4,50,000
+Paid:                  ₹1,80,000
+Outstanding:           ₹2,70,000
+Budget remaining:        ₹50,000
+
+Payment progress: 40%
+```
+
+Budget remaining is calculated as:
+
+```text
+Budget remaining = Budget target - Committed expenses
+```
+
+A negative result means the event has exceeded its budget.
+
+Do not prevent users from exceeding the budget.
+
+### Expense List
+
+Display expenses as compact cards or list items.
+
+Each expense must show:
+
+- Expense name.
+- Expected amount.
+- Paid amount.
+- Outstanding amount.
+- Payment status.
+- Optional category.
+
+Example:
+
+```text
+Photography                    PARTIAL
+
+Expected: ₹80,000
+Paid:     ₹30,000
+Pending:  ₹50,000
+
+```
+
+Status indicators must use both an icon and a color.
+
+Recommended semantic colors:
+
+| Status | Icon | Color |
+|---|---|---|
+| Unpaid | alert-circle | Love |
+| Partial | clock | Gold |
+| Paid | check-circle | Foam |
+| Overpaid | wallet | Iris |
+
+Use Rosé Pine theme colors as the basis for these indicators.
+
+Status must never depend on color alone.
+
+### Add Expense
+
+Provide an obvious action for adding an expense.
+
+On mobile, open a bottom sheet or appropriate Konsta UI modal.
+
+## 5.4 Expense Creation and Editing
+
+### Fields
+
+| Field | Required |
+|---|---|
+| Expense name | Yes |
+| Expected amount | Yes |
+| Category | No |
+| Vendor/contact | No |
+| Due date | No |
+| Notes | No |
+
+### Categories
+
+Provide a small predefined category list:
+
+- Venue.
+- Food and catering.
+- Photography.
+- Decoration.
+- Transportation.
+- Accommodation.
+- Entertainment.
+- Clothing.
+- Gifts.
+- Other.
+
+Users should also be able to select Other.
+
+Categories are organizational labels, not accounting classifications.
+
+### Validation
+
+- Name must not be empty.
+- Amount must be a valid monetary value.
+- Amount must not be negative.
+- Amount must be representable in the selected currency's minor unit.
+- Due date is optional.
+
+The expense must inherit its currency from its parent event.
+
+Do not allow an individual expense to have a different currency.
+
+## 5.5 Expense Details
+
+The expense details screen displays the full payment information.
+
+### Header
+
+- Expense name.
+- Category.
+- Vendor, if available.
+- Due date, if available.
+- Current payment status.
+- Edit action.
+
+### Financial Summary
+
+Display:
+
+```text
+Expected amount:  ₹80,000
+Total paid:       ₹50,000
+Outstanding:      ₹30,000
+```
+
+Show a payment progress bar.
+
+### Payment History
+
+Display all payments associated with the expense.
+
+Each payment entry should show:
+
+- Amount.
+- Payment date.
+- Payment method, if available.
+- Notes, if available.
+- Edit and delete actions.
+
+Sort payment history by payment date, newest first.
+
+### Record Payment
+
+Provide a prominent "Record payment" action.
+
+Fields:
+
+| Field | Required |
+|---|---|
+| Payment amount | Yes |
+| Payment date | Yes |
+| Payment method | No |
+| Notes | No |
+
+Payment date defaults to the current local date.
+
+Show the outstanding amount before recording payment.
+
+Allow payments that exceed the outstanding amount. Overpayment must be displayed explicitly rather than silently rejected.
+
+After saving, all affected financial summaries must update automatically.
+
+### Editing and Deleting Payments
+
+Users must be able to edit or delete payment records.
+
+Editing or deleting a payment must recalculate:
+
+- Total paid.
+- Outstanding.
+- Overpaid amount.
+- Payment status.
+- Event financial summaries.
+- Homepage summaries.
+
+All database mutations must use the payment service.
+
+---
+
+# 6. Financial Business Rules
+
+Financial correctness is a critical requirement.
+
+All financial calculations must be implemented in dedicated pure TypeScript functions.
+
+## 6.1 Monetary Representation
+
+Never use floating-point values for persisted monetary amounts.
+
+Store amounts as integer minor units.
+
+Examples:
+
+| Currency | User-facing value | Stored value |
+|---|---:|---:|
+| INR | ₹100.50 | 10050 |
+| USD | $100.50 | 10050 |
+| JPY | ¥100 | 100 |
+
+Use currency-specific minor-unit precision.
+
+Use `Intl.NumberFormat` for displaying currency amounts.
+
+The monetary input component must support decimal precision appropriate to the event currency.
+
+Validate that all persisted monetary amounts are non-negative safe integers.
+
+## 6.2 Expense Calculations
+
+Let:
+
+- `expected` = Expected expense amount.
+- `payments` = Associated payment records.
+- `paid` = Sum of payment amounts.
+
+```text
+paid = SUM(payments.amount)
+
+pending = MAX(0, expected - paid)
+
+overpaid = MAX(0, paid - expected)
+```
+
+### Payment Status
+
+```text
+IF paid == 0:
+    status = unpaid
+
+ELSE IF paid < expected:
+    status = partial
+
+ELSE IF paid == expected:
+    status = paid
+
+ELSE:
+    status = overpaid
+```
+
+Special case:
+
+If expected amount is zero and no payment exists, status is unpaid.
+
+## 6.3 Event Calculations
+
+For all expenses belonging to an event:
+
+```text
+committed = SUM(expenses.expectedAmount)
+
+paid = SUM(all associated payment amounts)
+
+pending = SUM(expense pending amounts)
+
+overpaid = SUM(expense overpaid amounts)
+```
+
+Do not calculate event pending as `MAX(0, committed - paid)` because individual expenses can be overpaid while others remain outstanding.
+
+Budget:
+
+```text
+budgetRemaining = budgetTarget - committed
+```
+
+Budget indicators should be hidden when no budget target exists.
+
+## 6.4 Payment Progress
+
+For an event:
+
+```text
+progress = committed > 0
+    ? (paid / committed) * 100
+    : 0
+```
+
+The visual progress bar should be clamped between 0 and 100%.
+
+The displayed percentage should be rounded appropriately.
+
+## 6.5 Important Financial Edge Cases
+
+The application must handle:
+
+1. Expense with no payments.
+2. Expense with one payment.
+3. Expense with multiple payments.
+4. Payment exceeding expected amount.
+5. Expected amount reduced below paid amount.
+6. Expected amount increased after partial payment.
+7. Payment edited.
+8. Payment deleted.
+9. Expense deleted.
+10. Event with no expenses.
+11. Event with no budget.
+12. Event with zero expected amount.
+
+Do not store calculated balances or payment statuses in the database.
+
+They must always be derived from source records.
+
+---
+
+# 7. Data Model
+
+Use the following TypeScript interfaces as the starting contract.
+
+## 7.1 Event
+
+```typescript
+interface Event {
+  id: string;
+  name: string;
+  description?: string;
+  eventDate?: string;
+  currency: string;
+  budgetAmount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+`currency` contains an ISO 4217 currency code.
+
+`budgetAmount` is stored in minor units.
+
+## 7.2 Expense
+
+```typescript
+interface Expense {
+  id: string;
+  eventId: string;
+  name: string;
+  category?: string;
+  expectedAmount: number;
+  vendor?: string;
+  dueDate?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+`expectedAmount` is stored in minor units.
+
+The event determines the expense currency.
+
+## 7.3 Payment
+
+```typescript
+type PaymentMethod =
+  | "cash"
+  | "upi"
+  | "bank_transfer"
+  | "card"
+  | "cheque"
+  | "other";
+
+interface Payment {
+  id: string;
+  expenseId: string;
+  amount: number;
+  paymentDate: string;
+  method?: PaymentMethod;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+## 7.4 Derived Expense Summary
+
+This is a calculated view model, not a database entity.
+
+```typescript
+type PaymentStatus =
+  | "unpaid"
+  | "partial"
+  | "paid"
+  | "overpaid";
+
+interface ExpenseSummary {
+  expected: number;
+  paid: number;
+  pending: number;
+  overpaid: number;
+  status: PaymentStatus;
+  progress: number;
+}
+```
+
+## 7.5 Derived Event Summary
+
+```typescript
+interface EventSummary {
+  committed: number;
+  paid: number;
+  pending: number;
+  overpaid: number;
+  budgetRemaining?: number;
+  paymentProgress: number;
+}
+```
+
+All amounts in these summaries use the event's currency minor units.
+
+---
+
+# 8. IndexedDB Architecture
+
+Use Dexie.js.
+
+Database name:
+
+```text
+EventLedgerDB
+```
+
+Initial database schema:
+
+```typescript
+db.version(1).stores({
+  events: "id, name, eventDate, createdAt",
+  expenses: "id, eventId, name, category, dueDate",
+  payments: "id, expenseId, paymentDate"
+});
+```
+
+Create a dedicated database module.
+
+Requirements:
+
+- Use UUID primary keys.
+- Use ISO 8601 timestamps.
+- Add appropriate indexes.
+- Use Dexie transactions for related mutations.
+- Implement schema versioning and migrations.
+- Avoid unnecessary indexes.
+- Keep database operations out of React components.
+
+### Database Constraints
+
+IndexedDB does not provide relational foreign-key constraints.
+
+Enforce relationships through service-layer validation.
+
+Examples:
+
+- An expense must reference an existing event.
+- A payment must reference an existing expense.
+- Deleting an event must remove associated expenses and payments.
+- Deleting an expense must remove associated payments.
+
+Related deletion operations must happen inside a single transaction.
+
+### Persistence
+
+Request persistent browser storage where supported:
+
+```typescript
+await navigator.storage?.persist?.();
+```
+
+Do not assume persistence is guaranteed.
+
+The application must gracefully handle:
+
+- IndexedDB unavailable.
+- Storage quota exceeded.
+- Database initialization errors.
+- Transaction failures.
+
+Never silently report successful persistence when a write fails.
+
+---
+
+# 9. Service Layer
+
+Organize business logic into feature-specific services.
+
+## 9.1 Event Service
+
+```text
+createEvent()
+getEvent()
+updateEvent()
+deleteEvent()
+getAllEvents()
+```
+
+Responsibilities:
+
+- Event CRUD.
+- Event validation.
+- Currency validation.
+- Event deletion with cascading cleanup.
+
+## 9.2 Expense Service
+
+```text
+createExpense()
+getExpense()
+updateExpense()
+deleteExpense()
+getExpensesByEvent()
+```
+
+Responsibilities:
+
+- Expense CRUD.
+- Parent event validation.
+- Amount validation.
+- Currency consistency.
+- Cascading payment deletion.
+
+## 9.3 Payment Service
+
+```text
+recordPayment()
+updatePayment()
+deletePayment()
+getPaymentsByExpense()
+```
+
+Responsibilities:
+
+- Payment CRUD.
+- Expense existence validation.
+- Amount validation.
+- Payment date validation.
+
+## 9.4 Calculation Module
+
+```text
+calculateExpenseSummary()
+calculateEventSummary()
+calculateBudgetRemaining()
+calculatePaymentProgress()
+```
+
+These must be pure functions.
+
+Do not access IndexedDB, Zustand, React, or browser APIs from calculation functions.
+
+---
+
+# 10. Zustand State Management
+
+Use Zustand sparingly.
+
+Recommended stores:
+
+## uiStore
+
+Responsibilities:
+
+- Global dialog visibility.
+- Global sheet visibility where needed.
+- Temporary UI interaction state.
+
+Prefer local React state for component-specific interactions.
+
+## settingsStore
+
+Responsibilities:
+
+- Theme preference.
+- Default currency.
+- Application preferences.
+
+Persist settings locally using Zustand persistence or an appropriate local storage mechanism.
+
+Do not put financial records into Zustand.
+
+Use Dexie's reactive queries to keep screens synchronized with IndexedDB.
+
+Prefer `useLiveQuery` or dedicated hooks built on top of it.
+
+---
+
+# 11. Visual Design System
+
+## 11.1 Design Direction
+
+Use a clean, minimal, mobile-first design inspired by Material Design principles.
+
+The application must use the Rosé Pine color system.
+
+Official theme repository:
+
+https://github.com/rose-pine/rose-pine-theme
+
+Use:
+
+- Rosé Pine Main for dark mode.
+- Rosé Pine Dawn for light mode.
+- Rosé Pine Moon as an optional future theme variant.
+
+## 11.2 Theme Modes
+
+Support:
+
+- System.
+- Light.
+- Dark.
+
+Persist the selected preference.
+
+When System is selected, respond to operating system theme changes.
+
+Avoid theme flashing during initial application load.
+
+Apply the initial theme before rendering the main React application.
+
+## 11.3 Theme Tokens
+
+Use centralized CSS variables.
+
+Do not scatter palette hex values throughout components.
+
+Dark palette:
+
+```css
+:root,
+[data-theme="dark"] {
+  --base: #191724;
+  --surface: #1f1d2e;
+  --overlay: #26233a;
+  --muted: #6e6a86;
+  --subtle: #908caa;
+  --text: #e0def4;
+
+  --love: #eb6f92;
+  --gold: #f6c177;
+  --rose: #ebbcba;
+  --pine: #31748f;
+  --foam: #9ccfd8;
+  --iris: #c4a7e7;
+}
+```
+
+Light palette:
+
+```css
+[data-theme="light"] {
+  --base: #faf4ed;
+  --surface: #fffaf3;
+  --overlay: #f2e9e1;
+  --muted: #9893a5;
+  --subtle: #797593;
+  --text: #575279;
+
+  --love: #b4637a;
+  --gold: #ea9d34;
+  --rose: #d7827e;
+  --pine: #286983;
+  --foam: #56949f;
+  --iris: #907aa9;
+}
+```
+
+These tokens must be mapped into Konsta UI and Tailwind styling.
+
+Verify the actual Konsta UI theming integration against its installed version.
+
+## 11.4 Component Guidelines
+
+Use Konsta UI for:
+
+- Navbar.
+- Toolbar.
+- List and ListItem.
+- Input.
+- Button.
+- Dialog.
+- Popup.
+- Sheet.
+- FAB.
+- Radio.
+- Toggle.
+- Toast.
+
+Use custom React components only where the application requires specialized layouts.
+
+Do not recreate standard components unnecessarily.
+
+## 11.5 Mobile Interaction Guidelines
+
+- Touch targets should generally be at least 44 × 44 CSS pixels.
+- Forms should use mobile-friendly bottom sheets where appropriate.
+- Primary actions should be easy to reach.
+- Avoid dense tables on mobile.
+- Avoid excessive decorative elements.
+- Use subtle borders and backgrounds.
+- Keep expense information readable at a glance.
+- Support keyboard navigation and accessible labels.
+- Respect safe-area insets.
+- Avoid unnecessary animations.
+
+The application should feel like a lightweight native utility.
+
+---
+
+# 12. PDF Export
+
+Users must be able to export an individual event as a PDF report.
+
+Use:
+
+- jsPDF.
+- jsPDF-AutoTable.
+
+Generate the PDF entirely within the browser.
+
+## 12.1 Report Contents
+
+1. Application name.
+2. Event name.
+3. Event date.
+4. Event currency.
+5. Report generation timestamp.
+6. Budget summary, if available.
+7. Total committed expenses.
+8. Total paid.
+9. Total outstanding.
+10. Expense breakdown.
+11. Individual payment history.
+
+### Expense Table
+
+Columns:
+
+```text
+Expense | Expected | Paid | Pending | Status
+```
+
+### Payment History
+
+For each expense:
+
+```text
+Expense: Photography
+
+Date         Description          Amount
+10 Oct       Advance              30,000
+25 Oct       Installment          20,000
+```
+
+Requirements:
+
+- Use the event currency throughout the report.
+- Use readable typography.
+- Support multiple pages.
+- Include page numbers.
+- Repeat table headers on additional pages.
+- Avoid clipping long expense names and notes.
+- Generate the report from a consistent data snapshot.
+- Use a sensible filename.
+
+Filename format:
+
+```text
+eventledger-{event-name}-{date}.pdf
+```
+
+PDF generation failures must display a useful error message.
+
+---
+
+# 13. Application Data Backup and Restore
+
+This is a core feature.
+
+All application data must be exportable as one JSON file.
+
+## 13.1 Backup Format
+
+Use a versioned format.
+
+```json
+{
+  "app": "EventLedger",
+  "schemaVersion": 1,
+  "exportedAt": "2026-11-07T12:00:00.000Z",
+  "data": {
+    "events": [],
+    "expenses": [],
+    "payments": []
+  }
+}
+```
+
+Do not export transient UI state.
+
+## 13.2 Export
+
+Export all events, expenses, and payments.
+
+Generate a downloadable JSON file.
+
+Suggested filename:
+
+```text
+eventledger-backup-YYYY-MM-DD.json
+```
+
+## 13.3 Import
+
+Import must support:
+
+### Replace
+
+- Validate the complete backup.
+- Ask for explicit confirmation.
+- Replace all existing application records.
+- Perform the operation transactionally.
+- Preserve the original database if the import fails.
+
+### Merge
+
+- Merge records using stable IDs.
+- Insert records that do not exist.
+- Skip identical existing records.
+- Detect conflicting records with the same ID.
+- Never silently overwrite conflicting data.
+- Present a conflict summary before proceeding.
+
+## 13.4 Validation
+
+Before modifying IndexedDB:
+
+- Parse JSON.
+- Validate application identifier.
+- Validate schema version.
+- Validate required fields.
+- Validate record types.
+- Validate unique IDs.
+- Validate foreign-key relationships.
+- Validate currency codes.
+- Validate monetary values.
+- Validate timestamps and dates.
+- Validate all references between events, expenses, and payments.
+
+Reject unsupported future schema versions.
+
+Do not partially import invalid data.
+
+---
+
+# 14. Settings Page
+
+Keep settings minimal.
+
+## Appearance
+
+- System theme.
+- Light theme.
+- Dark theme.
+
+## Preferences
+
+- Default currency.
+
+## Data Management
+
+- Export application data.
+- Import application data.
+- Replace or merge strategy.
+- Import validation summary.
+
+## About
+
+- Application name.
+- Version.
+- Privacy statement.
+- Technology information, if desired.
+
+Do not introduce unnecessary settings.
+
+---
+
+# 15. PWA and Offline Requirements
+
+The application must be installable as a Progressive Web App.
+
+Implement:
+
+- Web App Manifest.
+- Application icons.
+- Service worker.
+- Static asset caching.
+- Offline application shell.
+- Appropriate theme colors.
+- Installability metadata.
+
+After the first successful load, users must be able to:
+
+- Open the application offline.
+- View existing events.
+- Create and edit events.
+- Create and edit expenses.
+- Record and edit payments.
+- Generate PDF reports.
+- Export and import JSON backups.
+
+All core functionality must operate without a remote API.
+
+Do not cache sensitive financial data in a remote service worker cache unnecessarily. Financial records belong in IndexedDB.
+
+Request persistent storage where supported, but never assume it is guaranteed.
+
+Provide a useful error state if persistent storage is unavailable.
+
+---
+
+# 16. Error Handling and Data Safety
+
+Implement centralized error handling where appropriate.
+
+Important cases:
+
+| Error | Expected behavior |
+|---|---|
+| Database unavailable | Show storage error |
+| Database write failure | Show failure, preserve existing data |
+| Invalid monetary value | Display field validation |
+| Invalid payment date | Display field validation |
+| Missing event | Show not-found state |
+| Missing expense | Show not-found state |
+| PDF generation failure | Show error notification |
+| Invalid backup | Reject import with details |
+| Storage quota exceeded | Warn user |
+| Import transaction failure | Roll back changes |
+
+### Destructive Operations
+
+Deleting an event must require confirmation.
+
+Explain that deleting an event also deletes all its expenses and payments.
+
+Deleting an expense must explain that associated payment records will also be deleted.
+
+Payment deletion must require confirmation.
+
+Cancellation and deletion must not be treated as equivalent operations.
+
+Do not silently discard user data.
+
+---
+
+# 17. Security and Privacy
+
+The application is intended to operate completely on the client.
+
+Requirements:
+
+- No backend.
+- No authentication.
+- No remote database.
+- No third-party analytics.
+- No tracking scripts.
+- No unnecessary external network requests.
+- No financial data sent to external services.
+- Validate imported JSON.
+- Render user-provided text safely.
+- Avoid unsafe HTML rendering.
+- Do not expose database contents in logs.
+
+The application should clearly communicate that clearing browser data may permanently remove locally stored information unless the user has a backup.
+
+---
+
+# 18. Testing Requirements
+
+Use Vitest and React Testing Library.
+
+Prioritize business logic and data integrity.
+
+## 18.1 Unit Tests
+
+### Expense Calculations
+
+Test:
+
+- Unpaid expense.
+- Partially paid expense.
+- Fully paid expense.
+- Overpaid expense.
+- Zero expected amount.
+- Multiple payments.
+- Amount changed after payments.
+
+### Event Calculations
+
+Test:
+
+- No expenses.
+- Multiple expenses.
+- Mixed payment statuses.
+- Overpaid expense alongside unpaid expense.
+- Optional budget.
+- Budget exceeded.
+- Correct payment progress.
+
+### Currency
+
+Test:
+
+- INR formatting.
+- USD formatting.
+- JPY formatting.
+- Zero-decimal currencies.
+- Invalid currency codes.
+- Monetary precision validation.
+
+## 18.2 Database Tests
+
+Test:
+
+- Event CRUD.
+- Expense CRUD.
+- Payment CRUD.
+- Payment updates.
+- Cascading deletion.
+- Transaction rollback.
+- Database migration.
+
+## 18.3 Backup Tests
+
+Test:
+
+- Valid backup export.
+- Valid backup import.
+- Invalid JSON.
+- Missing required fields.
+- Duplicate IDs.
+- Invalid foreign keys.
+- Unsupported schema version.
+- Replace import.
+- Merge import.
+- Conflicting records.
+- Import transaction failure.
+
+## 18.4 UI Tests
+
+Test:
+
+- Event creation.
+- Expense creation.
+- Payment recording.
+- Payment editing.
+- Payment deletion.
+- Status updates.
+- Theme switching.
+- Empty states.
+- Navigation.
+- Import confirmation.
+
+---
+
+# 19. Project Structure
+
+Use a feature-oriented but relatively flat structure.
+
+Avoid excessive nesting and unnecessary abstraction.
+
+Recommended initial structure:
+
+```text
+src/
+│
+├── app/
+│   ├── App.tsx
+│   ├── router.tsx
+│   └── providers.tsx
+│
+├── pages/
+│   ├── HomePage.tsx
+│   ├── EventDetailsPage.tsx
+│   ├── ExpenseDetailsPage.tsx
+│   └── SettingsPage.tsx
+│
+├── components/
+│   ├── events/
+│   │   ├── EventCard.tsx
+│   │   └── EventForm.tsx
+│   │
+│   ├── expenses/
+│   │   ├── ExpenseCard.tsx
+│   │   ├── ExpenseForm.tsx
+│   │   └── ExpenseStatus.tsx
+│   │
+│   ├── payments/
+│   │   ├── PaymentForm.tsx
+│   │   └── PaymentHistory.tsx
+│   │
+│   ├── common/
+│   │   ├── CurrencyDisplay.tsx
+│   │   ├── EmptyState.tsx
+│   │   ├── ConfirmDialog.tsx
+│   │   └── PageHeader.tsx
+│   │
+│   └── layout/
+│       └── AppShell.tsx
+│
+├── features/
+│   ├── events/
+│   │   ├── eventService.ts
+│   │   └── eventValidation.ts
+│   │
+│   ├── expenses/
+│   │   ├── expenseService.ts
+│   │   ├── expenseCalculations.ts
+│   │   └── expenseValidation.ts
+│   │
+│   ├── payments/
+│   │   ├── paymentService.ts
+│   │   └── paymentValidation.ts
+│   │
+│   ├── backup/
+│   │   ├── backupSchema.ts
+│   │   ├── exportService.ts
+│   │   ├── importService.ts
+│   │   └── importValidation.ts
+│   │
+│   └── reports/
+│       └── pdfExportService.ts
+│
+├── db/
+│   ├── database.ts
+│   └── migrations.ts
+│
+├── stores/
+│   ├── uiStore.ts
+│   └── settingsStore.ts
+│
+├── hooks/
+│   ├── useEvents.ts
+│   ├── useExpenses.ts
+│   └── usePayments.ts
+│
+├── lib/
+│   ├── currency.ts
+│   ├── dates.ts
+│   └── ids.ts
+│
+├── types/
+│   ├── event.ts
+│   ├── expense.ts
+│   ├── payment.ts
+│   └── settings.ts
+│
+├── styles/
+│   ├── theme.css
+│   └── app.css
+│
+└── main.tsx
+```
+
+This structure is a starting point, not a requirement to create empty files for every entry.
+
+Only introduce files when their responsibilities exist.
+
+---
+
+# 20. Development Phases
+
+Implement the application incrementally.
+
+Do not attempt to build everything in one step.
+
+Each phase must leave the application in a runnable state.
+
+## Phase 1 — Project Foundation
+
+Implement:
+
+- Vite setup.
+- React and TypeScript.
+- Tailwind CSS.
+- Konsta UI.
+- Rosé Pine theme.
+- React Router.
+- Dexie database.
+- Initial schema.
+- Zustand stores.
+- Application shell.
+- Responsive layout.
+- Event creation.
+- Event listing.
+- Event editing and deletion.
+
+Acceptance criteria:
+
+- Application runs locally.
+- Events persist after page reload.
+- Light and dark themes work.
+- Mobile layout is usable.
+- Empty state works.
+- No unnecessary backend dependencies exist.
+
+## Phase 2 — Expense Management
+
+Implement:
+
+- Expense data model.
+- Expense CRUD.
+- Event details page.
+- Expense list.
+- Category selection.
+- Currency formatting.
+- Expense validation.
+- Budget calculations.
+- Expense empty state.
+
+Acceptance criteria:
+
+- Multiple expenses can be associated with one event.
+- Expenses persist across reloads.
+- Each expense inherits its event currency.
+- Financial summaries update after expense changes.
+- Budget is optional.
+- Budget warnings work.
+
+## Phase 3 — Payment Management
+
+Implement:
+
+- Payment data model.
+- Multiple payment records.
+- Payment CRUD.
+- Payment history.
+- Expense detail screen.
+- Expense status calculation.
+- Outstanding calculations.
+- Overpayment handling.
+- Event-level payment summaries.
+
+Acceptance criteria:
+
+- Multiple payments can be recorded against one expense.
+- Payments can be edited and deleted.
+- Expense statuses update correctly.
+- Event totals update correctly.
+- No derived monetary fields are persisted.
+- Database mutations remain consistent.
+
+This phase completes the essential product functionality.
+
+## Phase 4 — Reports and Backup
+
+Implement:
+
+- PDF export.
+- Complete JSON export.
+- JSON validation.
+- Replace import.
+- Merge import.
+- Conflict detection.
+- Transactional restore.
+- User-facing import summary.
+
+Acceptance criteria:
+
+- Individual events can be exported as PDF.
+- Reports contain all relevant financial information.
+- Full application backup can be downloaded.
+- Valid backups can be restored.
+- Invalid backups do not modify existing data.
+- Import failures do not leave partial data.
+
+## Phase 5 — PWA and Final Polish
+
+Implement:
+
+- PWA manifest.
+- Service worker.
+- Offline functionality.
+- Application icons.
+- Error states.
+- Accessibility improvements.
+- Mobile interaction refinement.
+- Performance optimization.
+- Final responsive testing.
+
+Acceptance criteria:
+
+- Application can be installed as a PWA.
+- Core features work offline after initial loading.
+- Data persists locally.
+- No critical console errors.
+- All essential tests pass.
+
+---
+
+# 21. Definition of Done
+
+The application is considered complete when:
+
+- [ ] Users can create multiple events.
+- [ ] Each event can use a different currency.
+- [ ] Each event can have an optional budget.
+- [ ] Users can add multiple expenses to events.
+- [ ] Users can edit and delete expenses.
+- [ ] Users can record multiple payments per expense.
+- [ ] Users can edit and delete payments.
+- [ ] Paid and pending amounts calculate correctly.
+- [ ] Overpayment is supported.
+- [ ] Payment statuses update automatically.
+- [ ] Event financial summaries are correct.
+- [ ] Currency-specific formatting works.
+- [ ] Users can export event PDF reports.
+- [ ] Users can export complete application data.
+- [ ] Users can import and restore backups.
+- [ ] Replace and merge import modes work.
+- [ ] Light, dark, and system themes work.
+- [ ] Data persists through browser reloads.
+- [ ] The application works offline after initial loading.
+- [ ] The application is responsive on mobile and desktop.
+- [ ] Critical business logic has automated tests.
+- [ ] No backend or account requirement exists.
+
+---
+
+# 22. Instructions for the LLM Development Harness
+
+These instructions govern implementation.
+
+## 22.1 General Development Rules
+
+1. Read the entire design document before implementation.
+2. Inspect the existing repository before modifying anything.
+3. Do not overwrite existing functionality without understanding it.
+4. Implement features in the defined development phases.
+5. Keep the application runnable after every phase.
+6. Use TypeScript strict mode.
+7. Avoid `any` unless there is a documented technical reason.
+8. Prefer simple, explicit implementations.
+9. Avoid unnecessary abstractions and design patterns.
+10. Do not introduce a backend.
+11. Do not add features outside the defined scope.
+12. Do not duplicate business logic across components.
+13. Keep dependencies minimal.
+14. Write tests for financial calculations and data integrity.
+15. Do not leave placeholder implementations for required functionality.
+
+## 22.2 Code Organization
+
+- One file should have one clear primary responsibility.
+- Keep functions small and understandable.
+- Use explicit imports.
+- Avoid excessive barrel exports.
+- Avoid unnecessary inheritance and class hierarchies.
+- Keep shared types in predictable locations.
+- Keep business logic independent of React.
+- Keep database access independent of presentation components.
+- Add file-level comments when they clarify responsibilities, contracts, side effects, or dependencies.
+
+Do not create documentation comments that merely repeat obvious function names.
+
+## 22.3 Financial Integrity
+
+This is the highest-priority technical constraint.
+
+- Use integer minor units for persisted money.
+- Never use floating-point arithmetic for financial calculations.
+- Never persist derived balances.
+- Never persist derived payment statuses.
+- Never aggregate different currencies.
+- Validate all imported monetary values.
+- Use transactions for related database mutations.
+- Keep calculations in pure functions.
+- Add tests for all payment status transitions.
+
+## 22.4 UI Quality
+
+- Follow the Rosé Pine visual system.
+- Use Konsta UI where appropriate.
+- Prioritize mobile usability.
+- Avoid unnecessarily complicated dashboards.
+- Avoid oversized decorative elements.
+- Provide clear empty states.
+- Use consistent spacing and typography.
+- Ensure status indicators have both icons and labels.
+- Ensure destructive actions require confirmation.
+- Use loading, success, and error states where appropriate.
+
+## 22.5 AI Agent Handoff
+
+Maintain the following project documentation:
+
+### AGENTS.md
+
+Contains:
+
+- Project overview.
+- Technology stack.
+- Architecture rules.
+- Coding conventions.
+- Important business constraints.
+- Testing commands.
+- Development workflow.
+
+### HANDOVER.md
+
+Maintain a concise record of:
+
+- Completed phases.
+- Current implementation status.
+- Important architectural decisions.
+- Known bugs.
+- Remaining tasks.
+- Relevant test results.
+
+Update HANDOVER.md at the end of each completed development phase.
+
+Do not use it as a duplicate of this design document.
+
+## 22.6 Implementation Workflow
+
+For each phase:
+
+1. Inspect existing code.
+2. Identify the relevant implementation tasks.
+3. Implement the smallest complete feature set.
+4. Run TypeScript checks.
+5. Run relevant automated tests.
+6. Run a production build.
+7. Fix regressions.
+8. Update documentation.
+9. Report completed work and remaining issues.
+
+Do not silently skip failed tests or build errors.
+
+Do not claim a feature is complete unless it has been implemented and verified.
+
+---
+
+# 23. Final Product Direction
+
+EventLedger should remain a focused utility.
+
+The primary workflow is:
+
+```text
+Create Event
+     |
+     v
+Add Expenses
+     |
+     v
+Record Payments
+     |
+     v
+Automatically Calculate Balances
+     |
+     v
+Review Outstanding Expenses
+     |
+     v
+Export PDF Report
+```
+
+The product should excel at doing these tasks quickly and reliably.
+
+It should not evolve into a general accounting application.
+
+**The guiding principle: Users should spend their time organizing their events, not managing the expense tracker itself.**
