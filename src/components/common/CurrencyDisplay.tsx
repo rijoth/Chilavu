@@ -1,11 +1,14 @@
 import React from 'react';
-import { formatCurrency } from '@/lib/currency';
+import { formatCurrencyParts } from '@/lib/currency';
 
-interface CurrencyDisplayProps {
+export interface CurrencyDisplayProps {
   amount: number | undefined | null;
   currency: string;
   className?: string;
   highlightStatus?: 'neutral' | 'paid' | 'pending' | 'overpaid' | 'love' | 'gold' | 'foam' | 'iris';
+  hideDecimalsIfWhole?: boolean;
+  muteDecimals?: boolean;
+  style?: React.CSSProperties;
 }
 
 export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
@@ -13,8 +16,11 @@ export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
   currency,
   className = '',
   highlightStatus = 'neutral',
+  hideDecimalsIfWhole = false,
+  muteDecimals = false,
+  style,
 }) => {
-  const formatted = formatCurrency(amount, currency);
+  const parts = formatCurrencyParts(amount, currency, { hideDecimalsIfWhole });
 
   let colorClass = 'text-text';
   if (highlightStatus === 'paid' || highlightStatus === 'foam') {
@@ -28,8 +34,23 @@ export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
   }
 
   return (
-    <span className={`font-mono tracking-tight ${colorClass} ${className}`}>
-      {formatted}
+    <span
+      style={style}
+      className={`font-mono tracking-tight ${colorClass} ${className}`}
+    >
+      {parts.main}
+      {parts.decimal && (
+        <span
+          className={
+            muteDecimals
+              ? 'text-[0.78em] opacity-75 font-normal tracking-normal'
+              : undefined
+          }
+        >
+          {parts.decimal}
+        </span>
+      )}
+      {parts.suffix}
     </span>
   );
 };

@@ -43,30 +43,76 @@ export function getCurrencyDecimals(currencyCode: string): number {
   return 2;
 }
 
-export function formatCurrency(
+export interface CurrencyParts {
+  main: string;
+  decimal: string;
+  suffix: string;
+  isWhole: boolean;
+  formatted: string;
+}
+
+export function formatCurrencyParts(
   minorUnits: number | undefined | null,
-  currencyCode: string = 'INR'
-): string {
+  currencyCode: string = 'INR',
+  options?: { hideDecimalsIfWhole?: boolean }
+): CurrencyParts {
   if (minorUnits === undefined || minorUnits === null || Number.isNaN(minorUnits)) {
-    return '—';
+    return { main: '—', decimal: '', suffix: '', isWhole: true, formatted: '—' };
   }
 
   const decimals = getCurrencyDecimals(currencyCode);
   const factor = 10 ** decimals;
   const majorUnits = minorUnits / factor;
+  const isWhole = decimals === 0 || minorUnits % factor === 0;
+  const minDigits = options?.hideDecimalsIfWhole && isWhole ? 0 : decimals;
 
   try {
-    return new Intl.NumberFormat(undefined, {
+    const formatter = new Intl.NumberFormat(undefined, {
       style: 'currency',
       currency: currencyCode,
-      minimumFractionDigits: decimals,
+      minimumFractionDigits: minDigits,
       maximumFractionDigits: decimals,
-    }).format(majorUnits);
+    });
+    const parts = formatter.formatToParts(majorUnits);
+    let main = '';
+    let decimal = '';
+    let suffix = '';
+    let seenFraction = false;
+
+    for (const part of parts) {
+      if (part.type === 'decimal' || part.type === 'fraction') {
+        decimal += part.value;
+        if (part.type === 'fraction') seenFraction = true;
+      } else if (seenFraction) {
+        suffix += part.value;
+      } else {
+        main += part.value;
+      }
+    }
+
+    const formatted = `${main}${decimal}${suffix}`;
+    return { main, decimal, suffix, isWhole, formatted };
   } catch {
     // Fallback if currency code is invalid or unsupported by Intl
     const symbol = COMMON_CURRENCIES.find(c => c.code === currencyCode)?.symbol || currencyCode;
-    return `${symbol} ${majorUnits.toFixed(decimals)}`;
+    if (options?.hideDecimalsIfWhole && isWhole) {
+      const formatted = `${symbol} ${majorUnits.toLocaleString()}`;
+      return { main: formatted, decimal: '', suffix: '', isWhole: true, formatted };
+    }
+    const fixed = majorUnits.toFixed(decimals);
+    const [whole, frac] = fixed.split('.');
+    const main = `${symbol} ${parseInt(whole, 10).toLocaleString()}`;
+    const decimal = frac ? `.${frac}` : '';
+    return { main, decimal, suffix: '', isWhole, formatted: `${main}${decimal}` };
   }
+}
+
+export function formatCurrency(
+  minorUnits: number | undefined | null,
+  currencyCode: string = 'INR',
+  options?: { hideDecimalsIfWhole?: boolean }
+): string {
+  return formatCurrencyParts(minorUnits, currencyCode, options).formatted;
 }
 
 /**

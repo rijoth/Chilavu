@@ -11,6 +11,7 @@ import { SearchBar } from '@/components/common/SearchBar';
 import { CurrencyDisplay } from '@/components/common/CurrencyDisplay';
 import { PWAInstallBanner } from '@/components/common/PWAInstallBanner';
 import { ChilavuLogo } from '@/components/common/ChilavuLogo';
+import { getCurrencyDecimals } from '@/lib/currency';
 import { useUIStore } from '@/stores/uiStore';
 
 export const HomePage: React.FC = () => {
@@ -119,58 +120,77 @@ export const HomePage: React.FC = () => {
         {/* Currency-grouped overall summary with Pending as primary visual focus */}
         {currencyTotals.length > 0 && (
           <section className="mb-5 space-y-3" aria-label="All events summary">
-            {currencyTotals.map(([curr, totals]) => (
-              <div
-                key={curr}
-                className="p-4 sm:p-5 rounded-2xl bg-surface/75 border border-overlay/80 shadow-xs"
-              >
-                <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-xs font-medium text-subtle">
-                    All events
-                  </span>
-                  <span className="text-xs text-subtle font-medium">
-                    {totals.count} {totals.count === 1 ? 'event' : 'events'}
-                  </span>
-                </div>
+            {currencyTotals.map(([curr, totals]) => {
+              const decimals = getCurrencyDecimals(curr);
+              const majorAmount = totals.pending / (10 ** decimals);
+              // Shrink a step for long values (e.g. ₹1,25,000 or larger)
+              const heroFontSize = majorAmount >= 10000000
+                ? 'clamp(1.125rem, 5vw, 1.5rem)'
+                : majorAmount >= 100000
+                  ? 'clamp(1.25rem, 6.2vw, 1.875rem)'
+                  : 'clamp(1.5rem, 8vw, 2.25rem)';
 
-                <div className="flex items-baseline justify-between gap-4">
-                  {/* Hero visual focus: Pending */}
-                  <div className="min-w-0">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-subtle block mb-0.5">
-                      Pending
+              return (
+                <div
+                  key={curr}
+                  className="@container p-4 sm:p-5 rounded-2xl bg-surface/75 border border-overlay/80 shadow-xs"
+                >
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="text-xs font-medium text-subtle">
+                      All events
                     </span>
-                    <CurrencyDisplay
-                      amount={totals.pending}
-                      currency={curr}
-                      highlightStatus={totals.pending > 0 ? 'pending' : 'neutral'}
-                      className="text-2xl sm:text-3xl font-extrabold block truncate leading-none"
-                    />
+                    <span className="text-xs text-subtle font-medium">
+                      {totals.count} {totals.count === 1 ? 'event' : 'events'}
+                    </span>
                   </div>
 
-                  {/* Secondary metrics: Paid and Committed */}
-                  <div className="flex items-center gap-3 sm:gap-5 shrink-0 text-right">
-                    <div>
-                      <span className="text-[11px] text-subtle block font-medium">Paid</span>
+                  {/* Responsive layout: stacked on narrow screens (<420px), side-by-side on wider screens */}
+                  <div className="flex flex-col @min-[420px]:flex-row min-[420px]:flex-row @min-[420px]:items-baseline min-[420px]:items-baseline justify-between gap-3.5 @min-[420px]:gap-4 min-[420px]:gap-4">
+                    {/* Row 1 / Left Hero: Pending at full width on narrow screens */}
+                    <div className="w-full @min-[420px]:w-auto min-[420px]:w-auto min-w-0">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-subtle block mb-0.5">
+                        Pending
+                      </span>
                       <CurrencyDisplay
-                        amount={totals.paid}
+                        amount={totals.pending}
                         currency={curr}
-                        highlightStatus="paid"
-                        className="text-sm sm:text-base font-bold block"
+                        highlightStatus={totals.pending > 0 ? 'pending' : 'neutral'}
+                        hideDecimalsIfWhole
+                        muteDecimals
+                        style={{ fontSize: heroFontSize }}
+                        className="font-extrabold block whitespace-nowrap tabular-nums leading-tight"
                       />
                     </div>
-                    <div className="h-6 w-px bg-overlay/80" />
-                    <div>
-                      <span className="text-[11px] text-subtle block font-medium">Committed</span>
-                      <CurrencyDisplay
-                        amount={totals.committed}
-                        currency={curr}
-                        className="text-sm sm:text-base font-semibold text-text block"
-                      />
+
+                    {/* Row 2 / Right Secondary: Paid and Committed together beneath, separated by divider */}
+                    <div className="flex items-center gap-3 sm:gap-5 shrink-0 min-w-0 justify-start @min-[420px]:justify-end min-[420px]:justify-end text-left @min-[420px]:text-right min-[420px]:text-right pt-2.5 border-t border-overlay/40 @min-[420px]:pt-0 min-[420px]:pt-0 @min-[420px]:border-t-0 min-[420px]:border-t-0">
+                      <div className="min-w-0">
+                        <span className="text-[11px] text-subtle block font-medium">Paid</span>
+                        <CurrencyDisplay
+                          amount={totals.paid}
+                          currency={curr}
+                          highlightStatus="paid"
+                          hideDecimalsIfWhole
+                          muteDecimals
+                          className="text-sm sm:text-base font-bold block tabular-nums whitespace-nowrap"
+                        />
+                      </div>
+                      <div className="h-6 w-px bg-overlay/80 shrink-0" />
+                      <div className="min-w-0">
+                        <span className="text-[11px] text-subtle block font-medium">Committed</span>
+                        <CurrencyDisplay
+                          amount={totals.committed}
+                          currency={curr}
+                          hideDecimalsIfWhole
+                          muteDecimals
+                          className="text-sm sm:text-base font-semibold text-text block tabular-nums whitespace-nowrap"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </section>
         )}
 
