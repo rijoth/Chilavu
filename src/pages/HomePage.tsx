@@ -118,15 +118,15 @@ export const HomePage: React.FC = () => {
 
         {/* Currency-grouped overall summary with Pending as primary visual focus */}
         {currencyTotals.length > 0 && (
-          <section className="mb-5 space-y-3" aria-label="Overall Summary">
+          <section className="mb-5 space-y-3" aria-label="All events summary">
             {currencyTotals.map(([curr, totals]) => (
               <div
                 key={curr}
                 className="p-4 sm:p-5 rounded-2xl bg-surface/75 border border-overlay/80 shadow-xs"
               >
                 <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-xs font-bold uppercase tracking-wider text-muted">
-                    Overall Summary ({curr})
+                  <span className="text-xs font-medium text-subtle">
+                    All events
                   </span>
                   <span className="text-xs text-subtle font-medium">
                     {totals.count} {totals.count === 1 ? 'event' : 'events'}
