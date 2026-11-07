@@ -302,15 +302,6 @@ export const EventDetailsPage: React.FC = () => {
                   : `${expenses.length} ${expenses.length === 1 ? 'item' : 'items'} tracked`}
               </p>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setIsAddExpenseOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-pine hover:bg-pine/90 text-white font-semibold text-xs transition shadow-sm active:scale-95 min-h-[38px]"
-            >
-              <Plus className="w-4 h-4" />
-              Add Expense
-            </button>
           </div>
 
           {/* Search Bar when 3 or more expenses exist */}

@@ -226,15 +226,6 @@ export const ExpenseDetailsPage: React.FC = () => {
                 {payments.length} {payments.length === 1 ? 'installment' : 'installments'} logged
               </p>
             </div>
-
-            <button
-              type="button"
-              onClick={handleRecordNewPayment}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-pine hover:bg-pine/90 text-white font-semibold text-xs transition shadow-sm active:scale-95 min-h-[38px]"
-            >
-              <Plus className="w-4 h-4" />
-              Record Payment
-            </button>
           </div>
 
           <PaymentHistoryList
