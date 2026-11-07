@@ -10,9 +10,13 @@ import {
   Receipt,
   Wallet,
   AlertCircle,
+  SearchX,
+  X,
 } from 'lucide-react';
 import { useEvent } from '@/hooks/useEvents';
 import { useExpenses } from '@/hooks/useExpenses';
+import { useDebounce } from '@/hooks/useDebounce';
+import { filterBySearch } from '@/features/expenses/expenseSearch';
 import { eventService } from '@/features/events/eventService';
 import { pdfExportService } from '@/features/reports/pdfExportService';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -22,6 +26,7 @@ import { ExpenseFormModal } from '@/components/expenses/ExpenseFormModal';
 import { EventFormModal } from '@/components/events/EventFormModal';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EmptyState } from '@/components/common/EmptyState';
+import { SearchBar } from '@/components/common/SearchBar';
 import { formatDate } from '@/lib/dates';
 import { useUIStore } from '@/stores/uiStore';
 
@@ -30,8 +35,8 @@ export const EventDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const showToast = useUIStore((s) => s.showToast);
 
-  const { event, summary, isLoading, notFound } = useEvent(eventId);
-  const { expenses } = useExpenses(eventId);
+  const { event, summary, isLoading: isEventLoading, notFound } = useEvent(eventId);
+  const { expenses, isLoading: isExpensesLoading } = useExpenses(eventId);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -39,11 +44,27 @@ export const EventDetailsPage: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedQuery = useDebounce(searchQuery, 150);
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
+
+  // Filter expenses live by name or vendor using domain pure helper
+  const filteredExpenses = React.useMemo(
+    () => filterBySearch(expenses, debouncedQuery),
+    [expenses, debouncedQuery]
+  );
+
+  const isLoading = isEventLoading || isExpensesLoading;
+
   if (isLoading) {
     return (
       <div className="flex-1 p-6 space-y-4">
         <div className="h-10 w-48 bg-surface rounded-xl animate-pulse" />
         <div className="h-40 bg-surface rounded-2xl animate-pulse" />
+        <div className="h-11 bg-surface rounded-2xl animate-pulse" />
         <div className="h-64 bg-surface rounded-2xl animate-pulse" />
       </div>
     );
@@ -276,7 +297,9 @@ export const EventDetailsPage: React.FC = () => {
             <div>
               <h3 className="text-base font-bold text-text">Expenses</h3>
               <p className="text-xs text-subtle">
-                {expenses.length} {expenses.length === 1 ? 'item' : 'items'} tracked
+                {debouncedQuery.trim()
+                  ? `${filteredExpenses.length} of ${expenses.length} ${expenses.length === 1 ? 'item' : 'items'}`
+                  : `${expenses.length} ${expenses.length === 1 ? 'item' : 'items'} tracked`}
               </p>
             </div>
 
@@ -290,6 +313,19 @@ export const EventDetailsPage: React.FC = () => {
             </button>
           </div>
 
+          {/* Search Bar when 3 or more expenses exist */}
+          {expenses.length >= 3 && (
+            <div className="mb-3">
+              <SearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                onClear={handleClearSearch}
+                placeholder="Search by name or vendor"
+                ariaLabel="Search expenses"
+              />
+            </div>
+          )}
+
           {expenses.length === 0 ? (
             <EmptyState
               icon={Receipt}
@@ -299,9 +335,19 @@ export const EventDetailsPage: React.FC = () => {
               onAction={() => setIsAddExpenseOpen(true)}
               className="mt-2 py-10"
             />
+          ) : filteredExpenses.length === 0 ? (
+            <EmptyState
+              icon={SearchX}
+              title={`No expenses match '${debouncedQuery.trim() || searchQuery.trim()}'`}
+              description="Check for typos or try searching with a different name or vendor."
+              actionLabel="Clear search"
+              actionIcon={X}
+              onAction={handleClearSearch}
+              className="mt-2 py-10"
+            />
           ) : (
             <div className="space-y-3">
-              {expenses.map((expense) => (
+              {filteredExpenses.map((expense) => (
                 <ExpenseCard
                   key={expense.id}
                   expense={expense}
