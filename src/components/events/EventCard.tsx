@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, CheckCircle2, Clock, Wallet } from 'lucide-react';
+import { ChevronRight, CheckCircle2, Clock, Wallet, Calendar } from 'lucide-react';
 import type { EventWithSummary } from '@/hooks/useEvents';
-import { formatDate } from '@/lib/dates';
+import { formatLocalDate } from '@/lib/dates';
 import { CurrencyDisplay } from '@/components/common/CurrencyDisplay';
 
 interface EventCardProps {
@@ -31,10 +31,16 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
     >
       {/* Line 1: Name and status on the left, total on the right */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
           <h3 className="text-sm sm:text-base font-bold text-text truncate group-hover:text-pine transition-colors">
             {event.name}
           </h3>
+          {event.eventDate && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted bg-overlay/60 px-2 py-0.5 rounded-md shrink-0">
+              <Calendar className="w-3 h-3 text-muted/80" />
+              <span>{formatLocalDate(event.eventDate)}</span>
+            </span>
+          )}
           <span
             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${
               isSettled
@@ -110,12 +116,6 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
         </div>
 
         <div className="flex items-center gap-2 shrink-0 font-mono text-xs text-subtle">
-          {event.eventDate && (
-            <span className="hidden sm:inline font-sans text-muted">
-              {formatDate(event.eventDate)}
-              <span className="mx-1.5 text-overlay">|</span>
-            </span>
-          )}
           <span className="font-semibold text-text">{summary.paymentProgress}%</span>
         </div>
       </div>

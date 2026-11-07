@@ -11,6 +11,27 @@ export function formatDate(dateString?: string, formatStr: string = 'dd MMM yyyy
   }
 }
 
+export function formatLocalDate(dateString?: string, locale?: string): string {
+  if (!dateString) return '';
+  try {
+    let date: Date;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split('-').map(Number);
+      date = new Date(year, month - 1, day);
+    } else {
+      date = new Date(dateString);
+    }
+    if (isNaN(date.getTime())) return dateString;
+    return new Intl.DateTimeFormat(locale || undefined, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(date);
+  } catch {
+    return dateString;
+  }
+}
+
 export function formatDateTime(dateString?: string): string {
   if (!dateString) return '';
   return formatDate(dateString, 'dd MMM yyyy, HH:mm');
