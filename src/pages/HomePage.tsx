@@ -127,7 +127,7 @@ export const HomePage: React.FC = () => {
 
         {/* Event Cards or Empty State */}
         {isLoading ? (
-          <div className="space-y-2.5 sm:space-y-3">
+          <div className="space-y-2.5 sm:space-y-3 pb-24">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-20 rounded-2xl bg-surface animate-pulse border border-overlay" />
             ))}
@@ -142,7 +142,7 @@ export const HomePage: React.FC = () => {
             className="mt-4 my-auto py-12"
           />
         ) : (
-          <div className="space-y-2.5 sm:space-y-3">
+          <div className="space-y-2.5 sm:space-y-3 pb-24">
             {events.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
