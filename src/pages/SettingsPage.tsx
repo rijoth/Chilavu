@@ -154,9 +154,6 @@ export const SettingsPage: React.FC = () => {
               );
             })}
           </div>
-          <p className="mt-3 text-xs text-subtle">
-            Rosé Pine Dawn is used for light theme and Rosé Pine Main for dark theme.
-          </p>
         </section>
 
         {/* Section: Preferences */}
