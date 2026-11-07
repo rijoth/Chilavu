@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Settings, CalendarHeart } from 'lucide-react';
+import { Plus, Settings, CalendarHeart, SearchX, X } from 'lucide-react';
 import { useEvents } from '@/hooks/useEvents';
+import { useDebounce } from '@/hooks/useDebounce';
+import { filterEvents } from '@/features/events/eventSearch';
 import { EventCard } from '@/components/events/EventCard';
 import { EventFormModal } from '@/components/events/EventFormModal';
 import { EmptyState } from '@/components/common/EmptyState';
+import { SearchBar } from '@/components/common/SearchBar';
 import { CurrencyDisplay } from '@/components/common/CurrencyDisplay';
 import { PWAInstallBanner } from '@/components/common/PWAInstallBanner';
 import { ChilavuLogo } from '@/components/common/ChilavuLogo';
@@ -13,6 +16,18 @@ export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { events, isLoading } = useEvents();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedQuery = useDebounce(searchQuery, 150);
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
+
+  // Filter events live by query (event name and event date)
+  const filteredEvents = React.useMemo(
+    () => filterEvents(events, debouncedQuery),
+    [events, debouncedQuery]
+  );
 
   // Group summary by currency (Section 5.1 Rule: never combine different currencies)
   const currencyTotals = React.useMemo(() => {
@@ -119,9 +134,29 @@ export const HomePage: React.FC = () => {
           </section>
         )}
 
+        {/* Search Bar: placed between summary card and "Your Events" heading, hidden when fewer than 3 events */}
+        {events.length >= 3 && (
+          <div className="mb-4">
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              onClear={handleClearSearch}
+              placeholder="Search events"
+              ariaLabel="Search events"
+            />
+          </div>
+        )}
+
         {/* Main Title */}
         <div className="mb-3">
-          <h2 className="text-xl font-bold text-text tracking-tight">Your Events</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-text tracking-tight">Your Events</h2>
+            {debouncedQuery.trim() && (
+              <span className="text-xs text-subtle font-medium">
+                {filteredEvents.length} of {events.length}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-subtle">Organize and monitor expenses per event</p>
         </div>
 
@@ -141,9 +176,19 @@ export const HomePage: React.FC = () => {
             onAction={() => setIsCreateOpen(true)}
             className="mt-4 my-auto py-12"
           />
+        ) : filteredEvents.length === 0 ? (
+          <EmptyState
+            icon={SearchX}
+            title={`No events match '${debouncedQuery.trim() || searchQuery.trim()}'`}
+            description="Check for typos or try searching with a different name or date."
+            actionLabel="Clear search"
+            actionIcon={X}
+            onAction={handleClearSearch}
+            className="mt-4 my-auto py-12"
+          />
         ) : (
           <div className="space-y-2.5 sm:space-y-3 pb-24">
-            {events.map((event) => (
+            {filteredEvents.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
           </div>
