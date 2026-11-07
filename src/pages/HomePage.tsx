@@ -38,125 +38,130 @@ export const HomePage: React.FC = () => {
   }, [events]);
 
   return (
-    <div className="flex-1 flex flex-col px-4 pt-4 pb-24 sm:px-6">
+    <div className="flex-1 flex flex-col pb-24">
       {/* Top Header */}
-      <header className="flex items-center justify-between pb-4 mb-4 border-b border-overlay/60">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-pine flex items-center justify-center text-white shadow-md shadow-pine/20">
-            <span className="font-bold text-lg font-mono">₹</span>
-          </div>
-          <div>
-            <span className="text-xl font-black text-text tracking-tight flex items-center gap-1.5">
-              Kanakku
-            </span>
-            <span className="text-[11px] text-subtle block font-medium">Local expense tracker</span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => navigate('/settings')}
-          className="p-2.5 rounded-xl text-subtle hover:text-text hover:bg-surface active:scale-95 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
-          aria-label="Settings"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
-      </header>
-
-      {/* In-App PWA Install Banner */}
-      <PWAInstallBanner />
-
-      {/* Currency-grouped compact overall summary if multiple events exist */}
-      {currencyTotals.length > 0 && (
-        <section className="mb-6 space-y-3" aria-label="Overall Summary">
-          {currencyTotals.map(([curr, totals]) => (
-            <div
-              key={curr}
-              className="p-4 rounded-2xl bg-surface/70 border border-overlay/80 shadow-xs"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted">
-                  Overall Summary ({curr})
-                </span>
-                <span className="text-xs text-subtle">
-                  {totals.count} {totals.count === 1 ? 'event' : 'events'}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-left">
-                <div>
-                  <span className="text-[11px] text-subtle block font-medium">Committed</span>
-                  <CurrencyDisplay
-                    amount={totals.committed}
-                    currency={curr}
-                    className="text-sm font-bold block truncate"
-                  />
-                </div>
-                <div>
-                  <span className="text-[11px] text-subtle block font-medium">Paid</span>
-                  <CurrencyDisplay
-                    amount={totals.paid}
-                    currency={curr}
-                    highlightStatus="paid"
-                    className="text-sm font-bold block truncate"
-                  />
-                </div>
-                <div className="text-right">
-                  <span className="text-[11px] text-subtle block font-medium">Pending</span>
-                  <CurrencyDisplay
-                    amount={totals.pending}
-                    currency={curr}
-                    highlightStatus={totals.pending > 0 ? 'pending' : 'neutral'}
-                    className="text-sm font-bold block truncate"
-                  />
-                </div>
-              </div>
+      <header className="sticky top-0 z-30 bg-base border-b border-overlay/60 px-4 py-4 sm:px-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-pine flex items-center justify-center text-white shadow-md shadow-pine/20">
+              <span className="font-bold text-lg font-mono">₹</span>
             </div>
-          ))}
-        </section>
-      )}
+            <div>
+              <span className="text-xl font-black text-text tracking-tight flex items-center gap-1.5">
+                Kanakku
+              </span>
+              <span className="text-[11px] text-subtle block font-medium">Local expense tracker</span>
+            </div>
+          </div>
 
-      {/* Main Title */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-xl font-bold text-text tracking-tight">Your Events</h2>
-          <p className="text-xs text-subtle">Organize and monitor expenses per event</p>
-        </div>
-
-        {events.length > 0 && (
           <button
             type="button"
-            onClick={() => setIsCreateOpen(true)}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-pine hover:bg-pine/90 text-white font-semibold text-xs transition shadow-sm active:scale-95 min-h-[38px]"
+            onClick={() => navigate('/settings')}
+            className="p-2.5 rounded-xl text-subtle hover:text-text hover:bg-surface active:scale-95 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Settings"
           >
-            <Plus className="w-4 h-4" />
-            New Event
+            <Settings className="w-5 h-5" />
           </button>
+        </div>
+      </header>
+
+      {/* Main Page Content */}
+      <div className="flex-1 flex flex-col px-4 pt-4 sm:px-6">
+        {/* In-App PWA Install Banner */}
+        <PWAInstallBanner />
+
+        {/* Currency-grouped compact overall summary if multiple events exist */}
+        {currencyTotals.length > 0 && (
+          <section className="mb-6 space-y-3" aria-label="Overall Summary">
+            {currencyTotals.map(([curr, totals]) => (
+              <div
+                key={curr}
+                className="p-4 rounded-2xl bg-surface/70 border border-overlay/80 shadow-xs"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted">
+                    Overall Summary ({curr})
+                  </span>
+                  <span className="text-xs text-subtle">
+                    {totals.count} {totals.count === 1 ? 'event' : 'events'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-left">
+                  <div>
+                    <span className="text-[11px] text-subtle block font-medium">Committed</span>
+                    <CurrencyDisplay
+                      amount={totals.committed}
+                      currency={curr}
+                      className="text-sm font-bold block truncate"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-subtle block font-medium">Paid</span>
+                    <CurrencyDisplay
+                      amount={totals.paid}
+                      currency={curr}
+                      highlightStatus="paid"
+                      className="text-sm font-bold block truncate"
+                    />
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[11px] text-subtle block font-medium">Pending</span>
+                    <CurrencyDisplay
+                      amount={totals.pending}
+                      currency={curr}
+                      highlightStatus={totals.pending > 0 ? 'pending' : 'neutral'}
+                      className="text-sm font-bold block truncate"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {/* Main Title */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-text tracking-tight">Your Events</h2>
+            <p className="text-xs text-subtle">Organize and monitor expenses per event</p>
+          </div>
+
+          {events.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setIsCreateOpen(true)}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-pine hover:bg-pine/90 text-white font-semibold text-xs transition shadow-sm active:scale-95 min-h-[38px]"
+            >
+              <Plus className="w-4 h-4" />
+              New Event
+            </button>
+          )}
+        </div>
+
+        {/* Event Cards or Empty State */}
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-44 rounded-2xl bg-surface animate-pulse border border-overlay" />
+            ))}
+          </div>
+        ) : events.length === 0 ? (
+          <EmptyState
+            icon={CalendarHeart}
+            title="No events yet"
+            description="Create your first event—like a wedding, birthday, trip, or family celebration—to start organizing your budget and payments."
+            actionLabel="Create Event"
+            onAction={() => setIsCreateOpen(true)}
+            className="mt-4 my-auto py-12"
+          />
+        ) : (
+          <div className="space-y-4">
+            {events.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
         )}
       </div>
-
-      {/* Event Cards or Empty State */}
-      {isLoading ? (
-        <div className="space-y-4">
-          {[1, 2].map((i) => (
-            <div key={i} className="h-44 rounded-2xl bg-surface animate-pulse border border-overlay" />
-          ))}
-        </div>
-      ) : events.length === 0 ? (
-        <EmptyState
-          icon={CalendarHeart}
-          title="No events yet"
-          description="Create your first event—like a wedding, birthday, trip, or family celebration—to start organizing your budget and payments."
-          actionLabel="Create Event"
-          onAction={() => setIsCreateOpen(true)}
-          className="mt-4 my-auto py-12"
-        />
-      ) : (
-        <div className="space-y-4">
-          {events.map((event) => (
-            <EventCard key={event.id} event={event} />
-          ))}
-        </div>
-      )}
 
       {/* Floating Action Button */}
       <button
