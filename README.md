@@ -1,6 +1,6 @@
 # Chilavu (ചി)
 
-> **Chilavu** (ചിലവ് — Malayalam for *expense/expenditure*) is a lightweight, local-first event expense and payment management Progressive Web Application (PWA).
+> **Chilavu** (ചിലവ് - Malayalam for *expense/expenditure*) is a lightweight, local-first event expense and payment management Progressive Web Application (PWA).
 
 Standalone Brand Mark: **ചി**
 
