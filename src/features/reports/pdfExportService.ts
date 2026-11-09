@@ -4,8 +4,25 @@ import type { Event } from '@/types/event';
 import type { Expense } from '@/types/expense';
 import type { Payment } from '@/types/payment';
 import { calculateExpenseSummary, calculateEventSummary } from '@/features/expenses/expenseCalculations';
-import { formatCurrency } from '@/lib/currency';
+import { formatCurrencyForPdf, fitFontSizeToWidth, PDF_METRIC_FONT_SIZE } from '@/features/reports/pdfFormat';
 import { formatDate, getTodayDateString } from '@/lib/dates';
+
+/** The bundled app icon, served from `public/` and precached by the PWA. */
+const APP_ICON_PATH = `${import.meta.env?.BASE_URL ?? '/'}pwa-192x192.png`;
+
+async function loadAppIconDataUrl(): Promise<string | null> {
+  try {
+    const response = await fetch(APP_ICON_PATH);
+    if (!response.ok) return null;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    let binary = '';
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return `data:image/png;base64,${btoa(binary)}`;
+  } catch {
+    // A missing icon must never block the report.
+    return null;
+  }
+}
 
 export const pdfExportService = {
   async generateEventReport(
@@ -43,10 +60,27 @@ export const pdfExportService = {
     doc.setFillColor(lightBgColor[0], lightBgColor[1], lightBgColor[2]);
     doc.roundedRect(40, cursorY, 515, 60, 6, 6, 'F');
 
+    const appIcon = await loadAppIconDataUrl();
+    const iconSize = 30;
+    const iconRadius = 6;
+    let titleX = 55;
+    if (appIcon) {
+      const iconX = 55;
+      const iconY = cursorY + 15;
+      // Clip the square icon to the app's rounded-corner mark.
+      doc.saveGraphicsState();
+      doc.roundedRect(iconX, iconY, iconSize, iconSize, iconRadius, iconRadius, null);
+      doc.clip();
+      doc.discardPath();
+      doc.addImage(appIcon, 'PNG', iconX, iconY, iconSize, iconSize);
+      doc.restoreGraphicsState();
+      titleX = iconX + iconSize + 12;
+    }
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.text('Chilavu', 55, cursorY + 36);
+    doc.text('Chilavu', titleX, cursorY + 36);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
@@ -83,40 +117,55 @@ export const pdfExportService = {
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(40, cursorY, 515, 76, 6, 6, 'FD');
 
-    const colWidth = 515 / (event.budgetAmount !== undefined ? 5 : 4);
-    let boxX = 40;
+    const summaryPadding = 15;
+    const summaryColumns = event.budgetAmount !== undefined ? 5 : 4;
+    const colWidth = (515 - summaryPadding * 2) / summaryColumns;
+    const metricGap = 6;
 
-    // Helper to draw summary metric
-    const drawMetric = (label: string, value: string, highlightColor?: [number, number, number]) => {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
-      doc.text(label, boxX + 15, cursorY + 26);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      if (highlightColor) {
-        doc.setTextColor(highlightColor[0], highlightColor[1], highlightColor[2]);
-      } else {
-        doc.setTextColor(darkTextColor[0], darkTextColor[1], darkTextColor[2]);
-      }
-      doc.text(value, boxX + 15, cursorY + 48);
-
-      boxX += colWidth;
-    };
+    type Metric = { label: string; value: string; color?: [number, number, number] };
+    const metrics: Metric[] = [];
 
     if (event.budgetAmount !== undefined) {
-      drawMetric('Budget Target', formatCurrency(event.budgetAmount, currency));
+      metrics.push({ label: 'Budget Target', value: formatCurrencyForPdf(event.budgetAmount, currency) });
     }
-    drawMetric('Committed', formatCurrency(summary.committed, currency));
-    drawMetric('Total Paid', formatCurrency(summary.paid, currency), [49, 116, 143]);
-    drawMetric('Outstanding', formatCurrency(summary.pending, currency), [235, 111, 146]);
+    metrics.push({ label: 'Committed', value: formatCurrencyForPdf(summary.committed, currency) });
+    metrics.push({ label: 'Total Paid', value: formatCurrencyForPdf(summary.paid, currency), color: [49, 116, 143] });
+    metrics.push({ label: 'Outstanding', value: formatCurrencyForPdf(summary.pending, currency), color: [235, 111, 146] });
     if (summary.budgetRemaining !== undefined) {
       const budgetRemainingColor: [number, number, number] =
         summary.budgetRemaining < 0 ? [235, 111, 146] : [49, 116, 143];
-      drawMetric('Budget Left', formatCurrency(summary.budgetRemaining, currency), budgetRemainingColor);
+      metrics.push({
+        label: 'Budget Left',
+        value: formatCurrencyForPdf(summary.budgetRemaining, currency),
+        color: budgetRemainingColor,
+      });
     } else {
-      drawMetric('Progress', `${summary.paymentProgress}%`, accentColor);
+      metrics.push({ label: 'Progress', value: `${summary.paymentProgress}%`, color: accentColor });
+    }
+
+    // Shrink all values together so even large amounts stay inside their column.
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(PDF_METRIC_FONT_SIZE);
+    const valueFontSize = fitFontSizeToWidth(
+      PDF_METRIC_FONT_SIZE,
+      metrics.map((metric) => doc.getTextWidth(metric.value)),
+      colWidth - metricGap
+    );
+
+    let boxX = 40 + summaryPadding;
+    for (const metric of metrics) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+      doc.text(metric.label, boxX, cursorY + 26);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(valueFontSize);
+      const color = metric.color ?? darkTextColor;
+      doc.setTextColor(color[0], color[1], color[2]);
+      doc.text(metric.value, boxX, cursorY + 48);
+
+      boxX += colWidth;
     }
 
     cursorY += 95;
@@ -134,9 +183,9 @@ export const pdfExportService = {
 
       return [
         exp.name + (exp.category ? ` (${exp.category})` : ''),
-        formatCurrency(expSummary.expected, currency),
-        formatCurrency(expSummary.paid, currency),
-        formatCurrency(expSummary.pending, currency),
+        formatCurrencyForPdf(expSummary.expected, currency),
+        formatCurrencyForPdf(expSummary.paid, currency),
+        formatCurrencyForPdf(expSummary.pending, currency),
         expSummary.status.toUpperCase(),
       ];
     });
@@ -202,7 +251,7 @@ export const pdfExportService = {
         formatDate(p.paymentDate),
         p.notes || '—',
         p.method ? p.method.replace('_', ' ').toUpperCase() : '—',
-        formatCurrency(p.amount, currency),
+        formatCurrencyForPdf(p.amount, currency),
       ]);
 
       autoTable(doc, {
